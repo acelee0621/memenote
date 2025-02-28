@@ -1,0 +1,12 @@
+[project]
+name = "memenote"
+version = "0.1.0"
+description = "a Fastapi REST API for memenote"
+readme = "README.md"
+requires-python = ">=3.13"
+dependencies = [
+    "aiosqlite>=0.21.0",
+    "alembic>=1.14.1",
+    "fastapi[standard]>=0.115.9",
+    "sqlalchemy>=2.0.38",
+]
