@@ -8,5 +8,6 @@ dependencies = [
     "aiosqlite>=0.21.0",
     "alembic>=1.14.1",
     "fastapi[standard]>=0.115.9",
+    "pydantic-settings>=2.8.1",
     "sqlalchemy>=2.0.38",
 ]
