@@ -33,6 +33,12 @@ class UserResponse(BaseSchema):
 class NoteCreate(BaseModel):
     title: str
     content: str
+    
+    
+class NoteUpdate(BaseModel):
+    title: str | None = None
+    content: str | None = None
+    
 
 class NoteResponse(BaseSchema):
     id: int
