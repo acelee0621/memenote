@@ -65,7 +65,7 @@ async def get_current_user(
     
     # Import here to avoid circular imports
     from app.core.database import get_db
-    from app.users.service import UserService
+    from app.service.user_service import UserService
 
     async for session in get_db():
         user = await UserService(session).get_user_by_username(username)

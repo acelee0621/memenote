@@ -85,3 +85,14 @@ class ReminderUpdate(BaseModel):
     timezone: str
     message: str | None = None    
     is_acknowledged: bool | None = None
+    
+    
+    
+class Token(BaseModel):
+    access_token: str
+    token_type: str = "bearer"
+    
+
+class LoginData(BaseModel):
+    username: str
+    password: str
