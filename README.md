@@ -139,8 +139,8 @@ memenote/
 ## Development Status
 
 - [x] Database models and Pydantic schemas defined.
-- [x] Basic CRUD API endpoints implemented.
-- [ ] User authentication (JWT or OAuth2).
+- [x] User authentication (JWT).
+- [ ] Basic CRUD API endpoints implemented.
 - [ ] Reminder scheduling with Celery.
 - [ ] Notification system with RabbitMQ and WebSocket.
 - [ ] Frontend development.
