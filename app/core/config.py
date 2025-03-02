@@ -6,7 +6,7 @@ from functools import lru_cache
 
 
 class Settings(BaseSettings):
-    app_name: str = "Todos API"
+    app_name: str = "MemeNote API"
     JWT_SECRET: str
     JWT_ALGORITHM: str
     JWT_EXPIRATION: int = 30
