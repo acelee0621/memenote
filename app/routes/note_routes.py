@@ -42,7 +42,7 @@ async def create_note(
 async def get_all_notes(
     service: NoteService = Depends(get_note_service),
     current_user: UserResponse = Depends(get_current_user),
-):
+) -> list[NoteResponse]:
     """Get all notes."""
     try:
         all_notes = await service.get_notes(current_user=current_user)
@@ -72,16 +72,16 @@ async def get_note(
 @router.patch(
     "/notes/{note_id}", response_model=NoteResponse, status_code=status.HTTP_200_OK
 )
-async def update_note(
-    note_id: int,
+async def update_note(    
     data: NoteUpdate,
+    note_id: int,
     service: NoteService = Depends(get_note_service),
     current_user: UserResponse = Depends(get_current_user),
 ) -> NoteResponse:
     """Update note."""
     try:
         updated_note = await service.update_note(
-            note_id=note_id, data=data, current_user=current_user
+            data=data, note_id=note_id, current_user=current_user
         )
         logger.info(f"Updated note {note_id}")
         return updated_note

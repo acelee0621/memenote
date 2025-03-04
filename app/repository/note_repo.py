@@ -21,7 +21,7 @@ class NoteRepository:
             Note: The newly created note object.
         Raises:
             AlreadyExistsException: If a note with the same title already exists.
-        """        
+        """
         new_note = Note(title=data.title, content=data.content, user_id=current_user.id)
         self.session.add(new_note)
         try:
@@ -31,7 +31,7 @@ class NoteRepository:
         except IntegrityError:
             await self.session.rollback()
             raise AlreadyExistsException(
-                f"Note with title {data.content} already exists"
+                f"Note with content {data.content} already exists"
             )
 
     async def get_by_id(self, note_id: int, current_user) -> Note:
@@ -44,7 +44,7 @@ class NoteRepository:
             Note: The note object if found
         Raises:
             NotFoundException: If note with given ID doesn't exist for current user
-        """        
+        """
         query = (
             select(Note).where(Note.id == note_id, Note.user_id == current_user.id)
             # .options(selectinload(Note.todos),selectinload(Note.reminders))  #  models里定义了lazy属性就无需这条
@@ -61,27 +61,27 @@ class NoteRepository:
         Args:
             current_user: The currently authenticated user object containing user ID.
         Returns:
-            list[Note]: A list of Note objects belonging to the current user.        
-        """        
+            list[Note]: A list of Note objects belonging to the current user.
+        """
         result = await self.session.scalars(
             select(Note).where(Note.user_id == current_user.id)
             # .options(selectinload(Note.todos),selectinload(Note.reminders))
         )
         return result.all()
 
-    async def update(self, note_id: int, data: NoteUpdate, current_user) -> Note:
+    async def update(self, data: NoteUpdate, note_id: int, current_user) -> Note:
         """
         Update a note with the given data for the current user.
         Args:
-            note_id (int): The ID of the note to update.
             data (NoteUpdate): The data to update the note with.
+            note_id (int): The ID of the note to update.
             current_user: The current user performing the update.
         Returns:
             Note: The updated note.
         Raises:
             NotFoundException: If the note with the given ID is not found or does not belong to the current user.
             ValueError: If there are no fields to update.
-        """        
+        """
         query = select(Note).where(Note.id == note_id, Note.user_id == current_user.id)
         result = await self.session.scalars(query)
         note = result.one_or_none()
@@ -111,7 +111,7 @@ class NoteRepository:
             NotFoundException: If the note does not exist or the note does not belong to the current user.
         Returns:
             None
-        """        
+        """
         note = await self.session.get(Note, note_id)
 
         if not note or note.user_id != current_user.id:

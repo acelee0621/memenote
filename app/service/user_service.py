@@ -7,7 +7,7 @@ from app.core.exceptions import UnauthorizedException
 from app.core.logging import get_logger
 from app.core.security import create_access_token, verify_password
 from app.repository.user_repo import UserRepository
-from app.schemas.schemas import LoginData,Token, UserCreate, UserInDB, UserResponse
+from app.schemas.schemas import LoginData, Token, UserCreate, UserInDB, UserResponse
 
 logger = get_logger(__name__)
 
@@ -46,8 +46,7 @@ class UserService:
     async def get_user(self, user_id: int) -> UserResponse:
         """Get user by ID."""
         return await self.repository.get_by_id(user_id)
-    
-    
+
     async def get_user_by_username(self, username: str) -> UserInDB:
         """Get user by username."""
         return await self.repository.get_by_username(username)

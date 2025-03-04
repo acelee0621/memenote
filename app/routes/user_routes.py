@@ -7,23 +7,23 @@ from app.core.logging import get_logger
 from app.core.security import get_current_user
 from app.service.user_service import UserService
 from app.models.models import User
-from app.schemas.schemas import LoginData, Token,UserCreate, UserResponse
+from app.schemas.schemas import LoginData, Token, UserCreate, UserResponse
 
 
 logger = get_logger(__name__)
 
-router = APIRouter(prefix="/auth",tags=["Auth"])
+router = APIRouter(prefix="/auth", tags=["Auth"])
 
 
 @router.post("/login", response_model=Token)
 async def login(
-    form_data: OAuth2PasswordRequestForm = Depends(), session: AsyncSession = Depends(get_db)
-)->Token:
+    form_data: OAuth2PasswordRequestForm = Depends(),
+    session: AsyncSession = Depends(get_db),
+) -> Token:
     """Authenticate user and return token."""
     login_data = LoginData(username=form_data.username, password=form_data.password)
     logger.debug(f"Login attempt: {login_data.username}")
     return await UserService(session).authenticate(login_data)
-    
 
 
 @router.post(
@@ -35,8 +35,8 @@ async def register(
     logger.debug(f"Registering user: {user_data.username}")
     new_user = await UserService(session).create_user(user_data)
     return UserResponse.model_validate(new_user)
-    
-    
+
+
 @router.get("/me", response_model=UserResponse)
 async def get_me(user: User = Depends(get_current_user)) -> UserResponse:
     """Get current authenticated user."""

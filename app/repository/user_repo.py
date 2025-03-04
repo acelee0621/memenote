@@ -15,7 +15,7 @@ class UserRepository:
     def __init__(self, session: AsyncSession):
         self.session = session
 
-    async def create(self, user_data: UserCreate) -> UserInDB:        
+    async def create(self, user_data: UserCreate) -> UserInDB:
         """
         Create a new user.
 
@@ -32,22 +32,20 @@ class UserRepository:
         existing_user = await self.get_by_username(user_data.username)
         if existing_user:
             raise AlreadyExistsException("Username already registered")
-        # Create user        
+        # Create user
         new_user = User(
-        username=user_data.username,
-        email=user_data.email,
-        full_name=user_data.full_name,
-        password_hash=get_password_hash(user_data.password),  # 加密密码
-    )
-        self.session.add(new_user)        
+            username=user_data.username,
+            email=user_data.email,
+            full_name=user_data.full_name,
+            password_hash=get_password_hash(user_data.password),  # 加密密码
+        )
+        self.session.add(new_user)
         await self.session.commit()
         await self.session.refresh(new_user)
         logger.info(f"Created user: {new_user.username}")
         return new_user
-        
-           
 
-    async def get_by_id(self, user_id: int) -> UserResponse:        
+    async def get_by_id(self, user_id: int) -> UserResponse:
         """
         Get a user by ID.
 
@@ -61,14 +59,13 @@ class UserRepository:
             NotFoundException: If the user is not found.
         """
 
-        query = select(User).where(User.id == user_id)         
+        query = select(User).where(User.id == user_id)
         result = await self.session.scalars(query)
         user = result.one_or_none()
         if not user:
             raise NotFoundException("User not found")
         return user
-    
-    
+
     async def get_by_username(self, username: str) -> UserInDB | None:
         """
         Get a user by username.
@@ -83,5 +80,3 @@ class UserRepository:
         result = await self.session.scalars(query)
         user = result.one_or_none()
         return user
-
-    

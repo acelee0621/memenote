@@ -52,8 +52,7 @@ class NoteResponse(BaseSchema):
 
 # 待办事项相关模型
 class TodoCreate(BaseModel):
-    content: str = Field(..., max_length=255)
-    note_id: int | None = None
+    content: str = Field(..., max_length=255)    
     
 class TodoUpdate(BaseModel):
     content: str | None = None    
@@ -71,9 +70,7 @@ class TodoResponse(BaseSchema):
 # 提醒相关模型
 class ReminderCreate(BaseModel):
     reminder_time: datetime
-    message: str = Field(...,max_length=255)
-    note_id: int | None = None
-    
+    message: str = Field(...,max_length=255)    
 
 class ReminderResponse(BaseSchema):
     id: int

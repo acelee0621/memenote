@@ -4,8 +4,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.core.config import settings
 from app.core.logging import setup_logging
 from app.utils.migrations import run_migrations
-from app.routes import user_routes, note_routes
-
+from app.routes import user_routes, note_routes, todo_routes
 
 
 # Set up logging configuration
@@ -29,7 +28,7 @@ app.add_middleware(
 
 app.include_router(user_routes.router)  # Users Router
 app.include_router(note_routes.router)  # Notes Router
-
+app.include_router(todo_routes.router)  # Todos Router
 
 
 @app.get("/health")
