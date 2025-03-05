@@ -84,12 +84,9 @@ class ReminderResponse(BaseSchema):
 
 # 更新模型（可选字段）
 class ReminderUpdate(BaseModel):
-    reminder_time: datetime | None = None
-    timezone: str
+    reminder_time: datetime | None = None    
     message: str | None = None    
-    is_acknowledged: bool | None = None
-    
-    
+    is_acknowledged: bool | None = None    
     
 class Token(BaseModel):
     access_token: str
