@@ -11,7 +11,7 @@ from app.core.exceptions import NotFoundException
 async def get_note_id(
     note_id: Annotated[
         int | None,
-        Query(description="Add a Todo Item to a Note identified by the given ID."),
+        Query(description="Add Item to a Note identified by the given ID."),
     ] = None,
     session: AsyncSession = Depends(get_db),
 ) -> int | None:
