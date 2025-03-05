@@ -32,7 +32,9 @@ class NoteService:
         note = await self.repository.get_by_id(note_id, current_user)
         return NoteResponse.model_validate(note)
 
-    async def get_notes(self, current_user) -> list[NoteResponse]:
+    async def get_notes(
+        self, search: str | None, order_by: str | None, current_user
+    ) -> list[NoteResponse]:
         """
         Asynchronously retrieves a list of notes for the current user.
         Args:
@@ -40,7 +42,9 @@ class NoteService:
         Returns:
             list[NoteResponse]: A list of NoteResponse objects representing the user's notes.
         """
-        notes = await self.repository.get_all(current_user)
+        notes = await self.repository.get_all(
+            search=search, order_by=order_by, current_user=current_user
+        )
         return [NoteResponse.model_validate(note) for note in notes]
 
     async def update_note(

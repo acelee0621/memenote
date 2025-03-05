@@ -1,4 +1,4 @@
-from sqlalchemy import select
+from sqlalchemy import select, desc, asc
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -55,7 +55,9 @@ class NoteRepository:
             raise NotFoundException(f"Note with id {note_id} not found")
         return note
 
-    async def get_all(self, current_user) -> list[Note]:
+    async def get_all(
+        self, search: str | None, order_by: str | None, current_user
+    ) -> list[Note]:
         """
         Retrieves all notes for the current user from the database.
         Args:
@@ -63,10 +65,18 @@ class NoteRepository:
         Returns:
             list[Note]: A list of Note objects belonging to the current user.
         """
-        result = await self.session.scalars(
-            select(Note).where(Note.user_id == current_user.id)
-            # .options(selectinload(Note.todos),selectinload(Note.reminders))
-        )
+        query = select(Note).where(Note.user_id == current_user.id)
+
+        if search:
+            query = query.where(Note.content.ilike(f"%{search}%"))
+
+        if order_by:
+            if order_by == "created_at desc":
+                query = query.order_by(desc(Note.created_at))
+            elif order_by == "created_at asc":
+                query = query.order_by(asc(Note.created_at))
+
+        result = await self.session.scalars(query)
         return result.all()
 
     async def update(self, data: NoteUpdate, note_id: int, current_user) -> Note:

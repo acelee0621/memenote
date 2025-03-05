@@ -1,4 +1,5 @@
-from fastapi import APIRouter, Depends, status
+from typing import Annotated, Literal
+from fastapi import APIRouter, Depends, Query, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
@@ -40,12 +41,21 @@ async def create_note(
 
 @router.get("/notes", response_model=list[NoteResponse])
 async def get_all_notes(
+    search: Annotated[
+        str | None, Query(description="Search todos by title or description")
+    ] = None,
+    order_by: Annotated[
+        Literal["created_at desc", "created_at asc"] | None,
+        Query(description="Order by field (e.g., created_at desc/asc)"),
+    ] = None,
     service: NoteService = Depends(get_note_service),
     current_user: UserResponse = Depends(get_current_user),
 ) -> list[NoteResponse]:
     """Get all notes."""
     try:
-        all_notes = await service.get_notes(current_user=current_user)
+        all_notes = await service.get_notes(
+            search=search, order_by=order_by, current_user=current_user
+        )
         logger.info(f"Retrieved {len(all_notes)} notes")
         return all_notes
     except Exception as e:
@@ -72,7 +82,7 @@ async def get_note(
 @router.patch(
     "/notes/{note_id}", response_model=NoteResponse, status_code=status.HTTP_200_OK
 )
-async def update_note(    
+async def update_note(
     data: NoteUpdate,
     note_id: int,
     service: NoteService = Depends(get_note_service),
