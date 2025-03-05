@@ -8,7 +8,12 @@ from app.core.security import get_current_user
 from app.core.dependencies import get_note_id
 from app.repository.reminder_repo import ReminderRepository
 from app.service.reminder_service import ReminderService
-from app.schemas.schemas import ReminderCreate, ReminderUpdate, ReminderResponse, UserResponse
+from app.schemas.schemas import (
+    ReminderCreate,
+    ReminderUpdate,
+    ReminderResponse,
+    UserResponse,
+)
 
 
 # Set up logger for this module
@@ -24,18 +29,19 @@ def get_reminder_service(session: AsyncSession = Depends(get_db)) -> ReminderSer
     return ReminderService(repository)
 
 
-@router.post("/reminders", response_model=ReminderResponse, status_code=status.HTTP_201_CREATED)
+@router.post(
+    "/reminders", response_model=ReminderResponse, status_code=status.HTTP_201_CREATED
+)
 async def create_reminder(
     data: ReminderCreate,
-    note_id: Annotated[int | None, Depends(get_note_id)],
-    timezone: Annotated[str,  Query(description="Input your local timezone",default="Asia/Shanghai")],
+    note_id: Annotated[int | None, Depends(get_note_id)],    
     service: ReminderResponse = Depends(get_reminder_service),
     current_user: UserResponse = Depends(get_current_user),
 ) -> ReminderResponse:
     """Create new reminder."""
     try:
         created_reminder = await service.create_reminder(
-            data=data, note_id=note_id, timezone=timezone, current_user=current_user
+            data=data, note_id=note_id, current_user=current_user
         )
         logger.info(f"Created reminder {created_reminder.id}")
         return created_reminder
@@ -67,7 +73,9 @@ async def get_reminder(
 ) -> ReminderResponse:
     """Get reminder by id."""
     try:
-        reminder = await service.get_reminder(reminder_id=reminder_id, current_user=current_user)
+        reminder = await service.get_reminder(
+            reminder_id=reminder_id, current_user=current_user
+        )
         logger.info(f"Retrieved reminder {reminder_id}")
         return reminder
     except Exception as e:
@@ -76,7 +84,9 @@ async def get_reminder(
 
 
 @router.patch(
-    "/reminders/{reminder_id}", response_model=ReminderResponse, status_code=status.HTTP_200_OK
+    "/reminders/{reminder_id}",
+    response_model=ReminderResponse,
+    status_code=status.HTTP_200_OK,
 )
 async def update_reminder(
     data: ReminderUpdate,
@@ -104,7 +114,9 @@ async def delete_reminder(
 ) -> None:
     """Delete reminder."""
     try:
-        await service.delete_reminder(reminder_id=reminder_id, current_user=current_user)
+        await service.delete_reminder(
+            reminder_id=reminder_id, current_user=current_user
+        )
         logger.info(f"Deleted reminder {reminder_id}")
     except Exception as e:
         logger.error(f"Failed to delete reminder {reminder_id}: {str(e)}")

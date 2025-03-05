@@ -1,12 +1,7 @@
-from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
-from copy import deepcopy
-
-from app.core.logging import get_logger
 from app.repository.reminder_repo import ReminderRepository
 from app.schemas.schemas import ReminderCreate, ReminderUpdate, ReminderResponse
 
-# Set up logger for this module
-logger = get_logger(__name__)
+
 
 class ReminderService:
     def __init__(self, repository: ReminderRepository):
@@ -15,7 +10,7 @@ class ReminderService:
         self.repository = repository
 
     async def create_reminder(
-        self, data: ReminderCreate, note_id: int | None, timezone:str, current_user
+        self, data: ReminderCreate, note_id: int | None, current_user
     ) -> ReminderResponse:
         """
         Asynchronously creates a new reminder.
@@ -26,21 +21,8 @@ class ReminderService:
             current_user: The current user creating the reminder.
         Returns:
             ReminderResponse: The response model containing the details of the created reminder.
-        """
-        try:
-            local_tz = ZoneInfo(timezone)
-        except ZoneInfoNotFoundError:
-            logger.error(f"Invalid timezone: {timezone}")
-            raise ValueError(f"Invalid timezone: {timezone}")
-
-        utc_tz = ZoneInfo("UTC")
-        local_time = data.reminder_time.replace(tzinfo=local_tz)
-        utc_time = local_time.astimezone(utc_tz)
-                
-        new_data = deepcopy(data)
-        new_data.reminder_time = utc_time
-
-        new_reminder = await self.repository.create(new_data, note_id, current_user)
+        """        
+        new_reminder = await self.repository.create(data, note_id, current_user)
         return ReminderResponse.model_validate(new_reminder)
 
     async def get_reminder(self, reminder_id: int, current_user) -> ReminderResponse:
