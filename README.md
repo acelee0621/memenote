@@ -140,7 +140,7 @@ memenote/
 
 - [x] Database models and Pydantic schemas defined.
 - [x] User authentication (JWT).
-- [ ] Basic CRUD API endpoints implemented.
+- [x] Basic CRUD API endpoints implemented.
 - [ ] Reminder scheduling with Celery.
 - [ ] Notification system with RabbitMQ and WebSocket.
 - [ ] Frontend development.
