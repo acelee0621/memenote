@@ -1,4 +1,4 @@
-from typing import Annotated, Literal
+from typing import Annotated
 from fastapi import APIRouter, Depends, Query, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -8,6 +8,7 @@ from app.core.security import get_current_user
 from app.repository.note_repo import NoteRepository
 from app.service.note_service import NoteService
 from app.schemas.schemas import NoteCreate, NoteUpdate, NoteResponse, UserResponse
+from app.schemas.param_schemas import NoteQueryParams
 
 
 # Set up logger for this module
@@ -41,26 +42,18 @@ async def create_note(
 
 @router.get("/notes", response_model=list[NoteResponse])
 async def get_all_notes(
-    search: Annotated[
-        str | None, Query(description="Search notes by title or content")
-    ] = None,
-    order_by: Annotated[
-        Literal["created_at desc", "created_at asc"] | None,
-        Query(description="Order by field"),
-    ] = None,
-    limit: Annotated[
-        int, Query(ge=1, le=100, description="Number of notes per page")
-    ] = 20,  # 默认每页20条,可被覆盖
-    offset: Annotated[
-        int, Query(ge=0, description="Offset for pagination")
-    ] = 0,   
+    params: Annotated[NoteQueryParams, Query()],
     service: NoteService = Depends(get_note_service),
     current_user: UserResponse = Depends(get_current_user),
 ) -> list[NoteResponse]:
     """Get all notes."""
     try:
         all_notes = await service.get_notes(
-            search=search, order_by=order_by, limit=limit, offset=offset, current_user=current_user
+            search=params.search,
+            order_by=params.order_by,
+            limit=params.limit,
+            offset=params.offset,
+            current_user=current_user,
         )
         logger.info(f"Retrieved {len(all_notes)} notes")
         return all_notes

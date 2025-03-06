@@ -38,7 +38,7 @@ class ReminderService:
 
     async def get_reminders(
         self,
-        note_id: str | None,
+        note_id: int | None,
         search: str | None,
         order_by: str | None,
         current_user,

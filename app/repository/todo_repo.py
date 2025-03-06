@@ -53,7 +53,7 @@ class TodoRepository:
         return todo
 
     async def get_all(
-        self, note_id: str | None, status: str | None, search: str | None, order_by: str | None, current_user
+        self, note_id: int | None, status: str | None, search: str | None, order_by: str | None, current_user
     ) -> list[Todo]:
         """
         Retrieve all Todo items for the current user.
@@ -83,7 +83,7 @@ class TodoRepository:
                 query = query.order_by(asc(Todo.created_at))
                 
         result = await self.session.scalars(query)
-        return result.all()
+        return list(result.all())
 
     async def update(self, data: TodoUpdate, todo_id: int, current_user) -> Todo:
         """

@@ -1,4 +1,4 @@
-from typing import Annotated, Literal
+from typing import Annotated
 from fastapi import APIRouter, Depends, Query, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -14,6 +14,7 @@ from app.schemas.schemas import (
     ReminderResponse,
     UserResponse,
 )
+from app.schemas.param_schemas import ReminderQueryParams
 
 
 # Set up logger for this module
@@ -35,7 +36,7 @@ def get_reminder_service(session: AsyncSession = Depends(get_db)) -> ReminderSer
 async def create_reminder(
     data: ReminderCreate,
     note_id: int | None = Depends(get_note_id),
-    service: ReminderResponse = Depends(get_reminder_service),
+    service: ReminderService = Depends(get_reminder_service),
     current_user: UserResponse = Depends(get_current_user),
 ) -> ReminderResponse:
     """Create new reminder."""
@@ -52,21 +53,17 @@ async def create_reminder(
 
 @router.get("/reminders", response_model=list[ReminderResponse])
 async def get_all_reminders(
-    note_id: Annotated[int | None, Query(description="Filter by Note ID")] = None,
-    search: Annotated[
-        str | None, Query(description="Search reminders by message")
-    ] = None,
-    order_by: Annotated[
-        Literal["created_at desc", "created_at asc"] | None,
-        Query(description="Order by field"),
-    ] = None,
-    service: ReminderResponse = Depends(get_reminder_service),
+    params: Annotated[ReminderQueryParams, Query()],
+    service: ReminderService = Depends(get_reminder_service),
     current_user: UserResponse = Depends(get_current_user),
 ) -> list[ReminderResponse]:
     """Get all reminders."""
     try:
         all_reminders = await service.get_reminders(
-            note_id=note_id, search=search, order_by=order_by, current_user=current_user
+            note_id=params.note_id,
+            search=params.search,
+            order_by=params.order_by,
+            current_user=current_user,
         )
         logger.info(f"Retrieved {len(all_reminders)} reminders")
         return all_reminders
@@ -78,7 +75,7 @@ async def get_all_reminders(
 @router.get("/reminders/{reminder_id}", response_model=ReminderResponse)
 async def get_reminder(
     reminder_id: int,
-    service: ReminderResponse = Depends(get_reminder_service),
+    service: ReminderService = Depends(get_reminder_service),
     current_user: UserResponse = Depends(get_current_user),
 ) -> ReminderResponse:
     """Get reminder by id."""
@@ -101,7 +98,7 @@ async def get_reminder(
 async def update_reminder(
     data: ReminderUpdate,
     reminder_id: int,
-    service: ReminderResponse = Depends(get_reminder_service),
+    service: ReminderService = Depends(get_reminder_service),
     current_user: UserResponse = Depends(get_current_user),
 ) -> ReminderResponse:
     """Update reminder."""
@@ -119,7 +116,7 @@ async def update_reminder(
 @router.delete("/reminders/{reminder_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_reminder(
     reminder_id: int,
-    service: ReminderResponse = Depends(get_reminder_service),
+    service: ReminderService = Depends(get_reminder_service),
     current_user: UserResponse = Depends(get_current_user),
 ) -> None:
     """Delete reminder."""

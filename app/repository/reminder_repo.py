@@ -63,7 +63,7 @@ class ReminderRepository:
 
     async def get_all(
         self,
-        note_id: str | None,
+        note_id: int | None,
         search: str | None,
         order_by: str | None,
         current_user,
@@ -90,7 +90,7 @@ class ReminderRepository:
                 query = query.order_by(asc(Reminder.created_at))
 
         result = await self.session.scalars(query)
-        return result.all()
+        return list(result.all())
 
     async def update(
         self, data: ReminderUpdate, reminder_id: int, current_user

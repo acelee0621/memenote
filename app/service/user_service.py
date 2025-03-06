@@ -6,8 +6,9 @@ from app.core.config import settings
 from app.core.exceptions import UnauthorizedException
 from app.core.logging import get_logger
 from app.core.security import create_access_token, verify_password
+from app.models.models import User
 from app.repository.user_repo import UserRepository
-from app.schemas.schemas import LoginData, Token, UserCreate, UserInDB, UserResponse
+from app.schemas.schemas import LoginData, Token, UserCreate, UserResponse
 
 logger = get_logger(__name__)
 
@@ -19,7 +20,7 @@ class UserService:
         self.session = session
         self.repository = UserRepository(session)
 
-    async def create_user(self, user_data: UserCreate) -> UserInDB:
+    async def create_user(self, user_data: UserCreate) -> User:
         """Create a new user."""
         return await self.repository.create(user_data)
 
@@ -45,8 +46,10 @@ class UserService:
 
     async def get_user(self, user_id: int) -> UserResponse:
         """Get user by ID."""
-        return await self.repository.get_by_id(user_id)
+        user = await self.repository.get_by_id(user_id)
+        return UserResponse.model_validate(user)
 
-    async def get_user_by_username(self, username: str) -> UserInDB:
+    async def get_user_by_username(self, username: str) -> UserResponse | None:
         """Get user by username."""
-        return await self.repository.get_by_username(username)
+        user = await self.repository.get_by_username(username)
+        return UserResponse.model_validate(user)

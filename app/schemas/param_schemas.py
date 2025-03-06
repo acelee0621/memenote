@@ -1,35 +1,33 @@
 from typing import Annotated, Literal
-from pydantic import BaseModel
-
-from fastapi import Query
+from pydantic import BaseModel, Field
 
 
 # 基类，包含所有路由共享的查询参数
 class CommonQueryParams(BaseModel):
     search: Annotated[
-        str | None, Query(description="Search notes by title or content etc.")
-    ] = None
+        str | None, Field(default=None, description="Text search parameter.")
+    ]
     order_by: Annotated[
-        Literal["Created_at desc", "Created_at asc"] | None,
-        Query(description="Order by field"),
-    ] = None
+        Literal["created_at desc", "created_at asc"] | None,
+        Field(default=None, description="Order by field"),
+    ]
 
 
 class NoteQueryParams(CommonQueryParams):
     limit: Annotated[
         int,
-        Query(default=20, ge=1, le=100, description="Number of notes per page"),
+        Field(default=20, ge=1, le=100, description="Number of notes per page"),
     ]  # 默认每页20条,可被覆盖
-    offset: Annotated[int, Query(default=0, ge=0, description="Offset for pagination")]
+    offset: Annotated[int, Field(default=0, ge=0, description="Offset for pagination")]
 
 
 class TodoQueryParams(CommonQueryParams):
     note_id: Annotated[
-        int | None, Query(default=None, description="Filter by Note's ID")
+        int | None, Field(default=None, description="Filter by Note's ID")
     ]
     status: Annotated[
-        Literal["Finished", "Unfinished"] | None,
-        Query(
+        Literal["finished", "unfinished"] | None,
+        Field(
             default=None,
             description="Filter by status",
         ),
@@ -38,5 +36,5 @@ class TodoQueryParams(CommonQueryParams):
 
 class ReminderQueryParams(CommonQueryParams):
     note_id: Annotated[
-        int | None, Query(default=None, description="Filter by Note's ID")
+        int | None, Field(default=None, description="Filter by Note's ID")
     ]

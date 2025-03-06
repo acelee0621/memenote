@@ -2,9 +2,6 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 from functools import lru_cache
 
 
-
-
-
 class Settings(BaseSettings):
     app_name: str = "MemeNote API"
     JWT_SECRET: str
@@ -12,8 +9,9 @@ class Settings(BaseSettings):
     JWT_EXPIRATION: int = 30
     DEBUG: bool = False
 
-    model_config = SettingsConfigDict(env_file=("./.env", ".env.local"))
-        
+    model_config = SettingsConfigDict(
+        env_file=(".env", ".env.local"), env_file_encoding="utf-8"
+    )
 
 
 @lru_cache()

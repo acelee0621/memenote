@@ -5,7 +5,7 @@ from app.core.exceptions import AlreadyExistsException, NotFoundException
 from app.core.logging import get_logger
 from app.core.security import get_password_hash
 from app.models.models import User
-from app.schemas.schemas import UserCreate, UserInDB, UserResponse
+from app.schemas.schemas import UserCreate
 
 
 logger = get_logger(__name__)
@@ -15,7 +15,7 @@ class UserRepository:
     def __init__(self, session: AsyncSession):
         self.session = session
 
-    async def create(self, user_data: UserCreate) -> UserInDB:
+    async def create(self, user_data: UserCreate) -> User:
         """
         Create a new user.
 
@@ -45,7 +45,7 @@ class UserRepository:
         logger.info(f"Created user: {new_user.username}")
         return new_user
 
-    async def get_by_id(self, user_id: int) -> UserResponse:
+    async def get_by_id(self, user_id: int) -> User:
         """
         Get a user by ID.
 
@@ -66,7 +66,7 @@ class UserRepository:
             raise NotFoundException("User not found")
         return user
 
-    async def get_by_username(self, username: str) -> UserInDB | None:
+    async def get_by_username(self, username: str) -> User | None:
         """
         Get a user by username.
 

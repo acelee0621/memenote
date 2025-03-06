@@ -1,9 +1,9 @@
-from app.repository.note_repo import NoteRepository
+from app.repository.todo_repo import TodoRepository
 from app.schemas.schemas import TodoCreate, TodoUpdate, TodoResponse
 
 
 class TodoService:
-    def __init__(self, repository: NoteRepository):
+    def __init__(self, repository: TodoRepository):
         """Service layer for todo operations."""
 
         self.repository = repository
@@ -39,7 +39,7 @@ class TodoService:
 
     async def get_todos(
         self,
-        note_id: str | None,
+        note_id: int | None,
         status: str | None,
         search: str | None,
         order_by: str | None,

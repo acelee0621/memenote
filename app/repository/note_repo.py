@@ -75,7 +75,7 @@ class NoteRepository:
         query = query.limit(limit).offset(offset)
 
         result = await self.session.scalars(query)
-        return result.all()
+        return list(result.all())
 
     async def update(self, data: NoteUpdate, note_id: int, current_user) -> Note:
         """

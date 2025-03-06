@@ -8,7 +8,7 @@ from passlib.context import CryptContext
 
 from app.core.config import settings
 from app.core.logging import get_logger
-from app.schemas.schemas import UserResponse
+
 
 logger = get_logger(__name__)
 
@@ -43,7 +43,7 @@ def create_access_token(data: dict, expires_delta: timedelta | None = None)->str
 
 async def get_current_user(
     token: str = Depends(oauth2_scheme)
-) -> UserResponse:
+):
     """Dependency to get current authenticated user."""
     credentials_exception = HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,

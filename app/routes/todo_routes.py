@@ -1,4 +1,4 @@
-from typing import Annotated, Literal
+from typing import Annotated
 from fastapi import APIRouter, Depends, Query, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -9,6 +9,7 @@ from app.core.dependencies import get_note_id
 from app.repository.todo_repo import TodoRepository
 from app.service.todo_service import TodoService
 from app.schemas.schemas import TodoCreate, TodoUpdate, TodoResponse, UserResponse
+from app.schemas.param_schemas import TodoQueryParams
 
 
 # Set up logger for this module
@@ -28,7 +29,7 @@ def get_todo_service(session: AsyncSession = Depends(get_db)) -> TodoService:
 async def create_todo(
     data: TodoCreate,
     note_id: int | None = Depends(get_note_id),
-    service: TodoResponse = Depends(get_todo_service),
+    service: TodoService = Depends(get_todo_service),
     current_user: UserResponse = Depends(get_current_user),
 ) -> TodoResponse:
     """Create new todo."""
@@ -45,28 +46,17 @@ async def create_todo(
 
 @router.get("/todos", response_model=list[TodoResponse])
 async def get_all_todos(
-    note_id: Annotated[int | None, Query(description="Filter by Note ID")] = None,
-    status: Annotated[
-        Literal["finished", "unfinished"] | None,
-        Query(
-            description="Filter by status",
-        ),
-    ] = None,
-    search: Annotated[str | None, Query(description="Search todos by content")] = None,
-    order_by: Annotated[
-        Literal["created_at desc", "created_at asc"] | None,
-        Query(description="Order by field"),
-    ] = None,
-    service: TodoResponse = Depends(get_todo_service),
+    params: Annotated[TodoQueryParams, Query()],
+    service: TodoService = Depends(get_todo_service),
     current_user: UserResponse = Depends(get_current_user),
 ) -> list[TodoResponse]:
     """Get all todos."""
     try:
         all_todos = await service.get_todos(
-            note_id=note_id,
-            status=status,
-            search=search,
-            order_by=order_by,
+            note_id=params.note_id,
+            status=params.status,
+            search=params.search,
+            order_by=params.order_by,
             current_user=current_user,
         )
         logger.info(f"Retrieved {len(all_todos)} todos")
@@ -79,7 +69,7 @@ async def get_all_todos(
 @router.get("/todos/{todo_id}", response_model=TodoResponse)
 async def get_todo(
     todo_id: int,
-    service: TodoResponse = Depends(get_todo_service),
+    service: TodoService = Depends(get_todo_service),
     current_user: UserResponse = Depends(get_current_user),
 ) -> TodoResponse:
     """Get todo by id."""
@@ -98,7 +88,7 @@ async def get_todo(
 async def update_todo(
     data: TodoUpdate,
     todo_id: int,
-    service: TodoResponse = Depends(get_todo_service),
+    service: TodoService = Depends(get_todo_service),
     current_user: UserResponse = Depends(get_current_user),
 ) -> TodoResponse:
     """Update todo."""
@@ -116,7 +106,7 @@ async def update_todo(
 @router.delete("/todos/{todo_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_todo(
     todo_id: int,
-    service: TodoResponse = Depends(get_todo_service),
+    service: TodoService = Depends(get_todo_service),
     current_user: UserResponse = Depends(get_current_user),
 ) -> None:
     """Delete todo."""
