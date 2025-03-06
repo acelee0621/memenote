@@ -1,0 +1,10 @@
+__pycache__/
+.venv/
+
+
+
+.git
+.gitignore
+.python-version
+README.md
+LICENSE
