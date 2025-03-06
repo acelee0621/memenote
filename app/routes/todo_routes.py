@@ -27,7 +27,7 @@ def get_todo_service(session: AsyncSession = Depends(get_db)) -> TodoService:
 @router.post("/todos", response_model=TodoResponse, status_code=status.HTTP_201_CREATED)
 async def create_todo(
     data: TodoCreate,
-    note_id: Annotated[int | None, Depends(get_note_id)],
+    note_id: int | None = Depends(get_note_id),
     service: TodoResponse = Depends(get_todo_service),
     current_user: UserResponse = Depends(get_current_user),
 ) -> TodoResponse:
@@ -49,13 +49,13 @@ async def get_all_todos(
     status: Annotated[
         Literal["finished", "unfinished"] | None,
         Query(
-            description="Filter by status (unfinished/finished)",
+            description="Filter by status",
         ),
     ] = None,
     search: Annotated[str | None, Query(description="Search todos by content")] = None,
     order_by: Annotated[
         Literal["created_at desc", "created_at asc"] | None,
-        Query(description="Order by field (e.g., created_at desc/asc)"),
+        Query(description="Order by field"),
     ] = None,
     service: TodoResponse = Depends(get_todo_service),
     current_user: UserResponse = Depends(get_current_user),

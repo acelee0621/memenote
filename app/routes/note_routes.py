@@ -46,10 +46,10 @@ async def get_all_notes(
     ] = None,
     order_by: Annotated[
         Literal["created_at desc", "created_at asc"] | None,
-        Query(description="Order by field (e.g., created_at desc/asc)"),
+        Query(description="Order by field"),
     ] = None,
     limit: Annotated[
-        int, Query(ge=1, le=100, description="Number of notes per page (max 100)")
+        int, Query(ge=1, le=100, description="Number of notes per page")
     ] = 20,  # 默认每页20条,可被覆盖
     offset: Annotated[
         int, Query(ge=0, description="Offset for pagination")

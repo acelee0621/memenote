@@ -34,7 +34,7 @@ def get_reminder_service(session: AsyncSession = Depends(get_db)) -> ReminderSer
 )
 async def create_reminder(
     data: ReminderCreate,
-    note_id: Annotated[int | None, Depends(get_note_id)],
+    note_id: int | None = Depends(get_note_id),
     service: ReminderResponse = Depends(get_reminder_service),
     current_user: UserResponse = Depends(get_current_user),
 ) -> ReminderResponse:
@@ -58,7 +58,7 @@ async def get_all_reminders(
     ] = None,
     order_by: Annotated[
         Literal["created_at desc", "created_at asc"] | None,
-        Query(description="Order by field (e.g., created_at desc/asc)"),
+        Query(description="Order by field"),
     ] = None,
     service: ReminderResponse = Depends(get_reminder_service),
     current_user: UserResponse = Depends(get_current_user),
