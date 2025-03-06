@@ -1,5 +1,5 @@
-from typing import Annotated
-from fastapi import APIRouter, Depends, status
+from typing import Annotated, Literal
+from fastapi import APIRouter, Depends, Query, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
@@ -34,7 +34,7 @@ def get_reminder_service(session: AsyncSession = Depends(get_db)) -> ReminderSer
 )
 async def create_reminder(
     data: ReminderCreate,
-    note_id: Annotated[int | None, Depends(get_note_id)],    
+    note_id: Annotated[int | None, Depends(get_note_id)],
     service: ReminderResponse = Depends(get_reminder_service),
     current_user: UserResponse = Depends(get_current_user),
 ) -> ReminderResponse:
@@ -52,12 +52,22 @@ async def create_reminder(
 
 @router.get("/reminders", response_model=list[ReminderResponse])
 async def get_all_reminders(
+    note_id: Annotated[int | None, Query(description="Filter by Note ID")] = None,
+    search: Annotated[
+        str | None, Query(description="Search reminders by message")
+    ] = None,
+    order_by: Annotated[
+        Literal["created_at desc", "created_at asc"] | None,
+        Query(description="Order by field (e.g., created_at desc/asc)"),
+    ] = None,
     service: ReminderResponse = Depends(get_reminder_service),
     current_user: UserResponse = Depends(get_current_user),
 ) -> list[ReminderResponse]:
     """Get all reminders."""
     try:
-        all_reminders = await service.get_reminders(current_user=current_user)
+        all_reminders = await service.get_reminders(
+            note_id=note_id, search=search, order_by=order_by, current_user=current_user
+        )
         logger.info(f"Retrieved {len(all_reminders)} reminders")
         return all_reminders
     except Exception as e:

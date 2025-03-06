@@ -1,5 +1,5 @@
-from typing import Annotated
-from fastapi import APIRouter, Depends, status
+from typing import Annotated, Literal
+from fastapi import APIRouter, Depends, Query, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
@@ -45,12 +45,30 @@ async def create_todo(
 
 @router.get("/todos", response_model=list[TodoResponse])
 async def get_all_todos(
+    note_id: Annotated[int | None, Query(description="Filter by Note ID")] = None,
+    status: Annotated[
+        Literal["finished", "unfinished"] | None,
+        Query(
+            description="Filter by status (unfinished/finished)",
+        ),
+    ] = None,
+    search: Annotated[str | None, Query(description="Search todos by content")] = None,
+    order_by: Annotated[
+        Literal["created_at desc", "created_at asc"] | None,
+        Query(description="Order by field (e.g., created_at desc/asc)"),
+    ] = None,
     service: TodoResponse = Depends(get_todo_service),
     current_user: UserResponse = Depends(get_current_user),
 ) -> list[TodoResponse]:
     """Get all todos."""
     try:
-        all_todos = await service.get_todos(current_user=current_user)
+        all_todos = await service.get_todos(
+            note_id=note_id,
+            status=status,
+            search=search,
+            order_by=order_by,
+            current_user=current_user,
+        )
         logger.info(f"Retrieved {len(all_todos)} todos")
         return all_todos
     except Exception as e:

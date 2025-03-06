@@ -56,15 +56,10 @@ class NoteRepository:
         return note
 
     async def get_all(
-        self, search: str | None, order_by: str | None, current_user
+        self, search: str | None, order_by: str | None, limit: int,
+    offset: int, current_user
     ) -> list[Note]:
-        """
-        Retrieves all notes for the current user from the database.
-        Args:
-            current_user: The currently authenticated user object containing user ID.
-        Returns:
-            list[Note]: A list of Note objects belonging to the current user.
-        """
+        
         query = select(Note).where(Note.user_id == current_user.id)
 
         if search:
@@ -75,6 +70,9 @@ class NoteRepository:
                 query = query.order_by(desc(Note.created_at))
             elif order_by == "created_at asc":
                 query = query.order_by(asc(Note.created_at))
+                
+        # 分页功能
+        query = query.limit(limit).offset(offset)
 
         result = await self.session.scalars(query)
         return result.all()

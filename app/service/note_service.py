@@ -33,7 +33,12 @@ class NoteService:
         return NoteResponse.model_validate(note)
 
     async def get_notes(
-        self, search: str | None, order_by: str | None, current_user
+        self,
+        search: str | None,
+        order_by: str | None,
+        limit: int,
+        offset: int,
+        current_user,
     ) -> list[NoteResponse]:
         """
         Asynchronously retrieves a list of notes for the current user.
@@ -43,7 +48,11 @@ class NoteService:
             list[NoteResponse]: A list of NoteResponse objects representing the user's notes.
         """
         notes = await self.repository.get_all(
-            search=search, order_by=order_by, current_user=current_user
+            search=search,
+            order_by=order_by,
+            limit=limit,
+            offset=offset,
+            current_user=current_user,
         )
         return [NoteResponse.model_validate(note) for note in notes]
 

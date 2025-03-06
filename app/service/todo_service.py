@@ -37,7 +37,14 @@ class TodoService:
         todo = await self.repository.get_by_id(todo_id, current_user)
         return TodoResponse.model_validate(todo)
 
-    async def get_todos(self, current_user) -> list[TodoResponse]:
+    async def get_todos(
+        self,
+        note_id: str | None,
+        status: str | None,
+        search: str | None,
+        order_by: str | None,
+        current_user,
+    ) -> list[TodoResponse]:
         """
         Asynchronously retrieves a list of todos for the current user.
         Args:
@@ -45,7 +52,13 @@ class TodoService:
         Returns:
             list[TodoResponse]: A list of TodoResponse objects representing the todos.
         """
-        todos = await self.repository.get_all(current_user)
+        todos = await self.repository.get_all(
+            note_id=note_id,
+            status=status,
+            search=search,
+            order_by=order_by,
+            current_user=current_user,
+        )
         return [TodoResponse.model_validate(todo) for todo in todos]
 
     async def update_todo(

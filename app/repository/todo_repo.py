@@ -1,4 +1,4 @@
-from sqlalchemy import select
+from sqlalchemy import select, desc, asc
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -52,7 +52,9 @@ class TodoRepository:
             raise NotFoundException(f"Todo with id {todo_id} not found")
         return todo
 
-    async def get_all(self, current_user) -> list[Todo]:
+    async def get_all(
+        self, note_id: str | None, status: str | None, search: str | None, order_by: str | None, current_user
+    ) -> list[Todo]:
         """
         Retrieve all Todo items for the current user.
         Args:
@@ -60,9 +62,27 @@ class TodoRepository:
         Returns:
             A list of Todo items associated with the current user.
         """
-        result = await self.session.scalars(
-            select(Todo).where(Todo.user_id == current_user.id)
-        )
+        query = select(Todo).where(Todo.user_id == current_user.id)
+        
+        if note_id:
+            query = query.where(Todo.note_id == note_id)
+
+        if status:
+            if status == "finished":
+                query = query.where(Todo.is_completed.is_(True))
+            elif status == "unfinished":
+                query = query.where(Todo.is_completed.is_(False))
+        
+        if search:
+            query = query.where(Todo.content.ilike(f"%{search}%"))
+
+        if order_by:
+            if order_by == "created_at desc":
+                query = query.order_by(desc(Todo.created_at))
+            elif order_by == "created_at asc":
+                query = query.order_by(asc(Todo.created_at))
+                
+        result = await self.session.scalars(query)
         return result.all()
 
     async def update(self, data: TodoUpdate, todo_id: int, current_user) -> Todo:

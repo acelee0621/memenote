@@ -42,19 +42,25 @@ async def create_note(
 @router.get("/notes", response_model=list[NoteResponse])
 async def get_all_notes(
     search: Annotated[
-        str | None, Query(description="Search todos by title or description")
+        str | None, Query(description="Search notes by title or content")
     ] = None,
     order_by: Annotated[
         Literal["created_at desc", "created_at asc"] | None,
         Query(description="Order by field (e.g., created_at desc/asc)"),
     ] = None,
+    limit: Annotated[
+        int, Query(ge=1, le=100, description="Number of notes per page (max 100)")
+    ] = 20,  # 默认每页20条,可被覆盖
+    offset: Annotated[
+        int, Query(ge=0, description="Offset for pagination")
+    ] = 0,   
     service: NoteService = Depends(get_note_service),
     current_user: UserResponse = Depends(get_current_user),
 ) -> list[NoteResponse]:
     """Get all notes."""
     try:
         all_notes = await service.get_notes(
-            search=search, order_by=order_by, current_user=current_user
+            search=search, order_by=order_by, limit=limit, offset=offset, current_user=current_user
         )
         logger.info(f"Retrieved {len(all_notes)} notes")
         return all_notes

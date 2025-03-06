@@ -1,4 +1,4 @@
-from sqlalchemy import select
+from sqlalchemy import select, desc, asc
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -12,7 +12,9 @@ class ReminderRepository:
         """Repository layer for reminder operations."""
         self.session = session
 
-    async def create(self, data: ReminderCreate, note_id: int | None, current_user) -> Reminder:
+    async def create(
+        self, data: ReminderCreate, note_id: int | None, current_user
+    ) -> Reminder:
         """
         Asynchronously creates a new reminder in the database.
         Args:
@@ -23,8 +25,13 @@ class ReminderRepository:
             Reminder: The newly created reminder object.
         Raises:
             Exception: If the database operation fails.
-        """        
-        new_reminder = Reminder(reminder_time=data.reminder_time, message=data.message, note_id=note_id, user_id=current_user.id)
+        """
+        new_reminder = Reminder(
+            reminder_time=data.reminder_time,
+            message=data.message,
+            note_id=note_id,
+            user_id=current_user.id,
+        )
         self.session.add(new_reminder)
         try:
             await self.session.commit()
@@ -44,28 +51,50 @@ class ReminderRepository:
             Reminder: The reminder object if found.
         Raises:
             NotFoundException: If no reminder with the given ID is found for the current user.
-        """        
-        query = select(Reminder).where(Reminder.id == reminder_id, Reminder.user_id == current_user.id)
+        """
+        query = select(Reminder).where(
+            Reminder.id == reminder_id, Reminder.user_id == current_user.id
+        )
         result = await self.session.scalars(query)
         reminder = result.one_or_none()
         if not reminder:
             raise NotFoundException(f"Reminder with id {reminder_id} not found")
         return reminder
 
-    async def get_all(self, current_user) -> list[Reminder]:
+    async def get_all(
+        self,
+        note_id: str | None,
+        search: str | None,
+        order_by: str | None,
+        current_user,
+    ) -> list[Reminder]:
         """
         Retrieve all reminders for the current user.
         Args:
             current_user: The user whose reminders are to be retrieved.
         Returns:
             A list of Reminder objects associated with the current user.
-        """        
-        result = await self.session.scalars(
-            select(Reminder).where(Reminder.user_id == current_user.id)
-        )
+        """
+        query = select(Reminder).where(Reminder.user_id == current_user.id)
+
+        if note_id:
+            query = query.where(Reminder.note_id == note_id)
+
+        if search:
+            query = query.where(Reminder.message.ilike(f"%{search}%"))
+
+        if order_by:
+            if order_by == "created_at desc":
+                query = query.order_by(desc(Reminder.created_at))
+            elif order_by == "created_at asc":
+                query = query.order_by(asc(Reminder.created_at))
+
+        result = await self.session.scalars(query)
         return result.all()
 
-    async def update(self, data: ReminderUpdate, reminder_id: int, current_user) -> Reminder:
+    async def update(
+        self, data: ReminderUpdate, reminder_id: int, current_user
+    ) -> Reminder:
         """
         Updates an existing reminder with the provided data.
         Args:
@@ -77,8 +106,10 @@ class ReminderRepository:
         Raises:
             NotFoundException: If the reminder with the given ID is not found or does not belong to the current user.
             ValueError: If there are no fields to update.
-        """        
-        query = select(Reminder).where(Reminder.id == reminder_id, Reminder.user_id == current_user.id)
+        """
+        query = select(Reminder).where(
+            Reminder.id == reminder_id, Reminder.user_id == current_user.id
+        )
         result = await self.session.scalars(query)
         reminder = result.one_or_none()
         if not reminder:
@@ -105,7 +136,7 @@ class ReminderRepository:
             current_user: The user attempting to delete the reminder.
         Raises:
             NotFoundException: If the reminder does not exist or does not belong to the current user.
-        """        
+        """
         todo = await self.session.get(Reminder, reminder_id)
         if not todo or todo.user_id != current_user.id:
             raise NotFoundException(f"Reminder with id {reminder_id} not found")

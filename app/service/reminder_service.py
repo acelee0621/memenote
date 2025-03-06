@@ -2,7 +2,6 @@ from app.repository.reminder_repo import ReminderRepository
 from app.schemas.schemas import ReminderCreate, ReminderUpdate, ReminderResponse
 
 
-
 class ReminderService:
     def __init__(self, repository: ReminderRepository):
         """Service layer for reminder operations."""
@@ -21,7 +20,7 @@ class ReminderService:
             current_user: The current user creating the reminder.
         Returns:
             ReminderResponse: The response model containing the details of the created reminder.
-        """        
+        """
         new_reminder = await self.repository.create(data, note_id, current_user)
         return ReminderResponse.model_validate(new_reminder)
 
@@ -37,7 +36,13 @@ class ReminderService:
         reminder = await self.repository.get_by_id(reminder_id, current_user)
         return ReminderResponse.model_validate(reminder)
 
-    async def get_reminders(self, current_user) -> list[ReminderResponse]:
+    async def get_reminders(
+        self,
+        note_id: str | None,
+        search: str | None,
+        order_by: str | None,
+        current_user,
+    ) -> list[ReminderResponse]:
         """
         Retrieve all reminders for the current user.
         Args:
@@ -45,7 +50,9 @@ class ReminderService:
         Returns:
             A list of ReminderResponse objects representing the user's reminders.
         """
-        reminders = await self.repository.get_all(current_user)
+        reminders = await self.repository.get_all(
+            note_id=note_id, search=search, order_by=order_by, current_user=current_user
+        )
         return [ReminderResponse.model_validate(reminder) for reminder in reminders]
 
     async def update_reminder(
