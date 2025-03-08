@@ -1,5 +1,6 @@
 from app.repository.reminder_repo import ReminderRepository
 from app.schemas.schemas import ReminderCreate, ReminderUpdate, ReminderResponse
+from app.core.celery_app import celery_app
 
 
 class ReminderService:
@@ -22,7 +23,21 @@ class ReminderService:
             ReminderResponse: The response model containing the details of the created reminder.
         """
         new_reminder = await self.repository.create(data, note_id, current_user)
-        return ReminderResponse.model_validate(new_reminder)
+        result = ReminderResponse.model_validate(new_reminder)
+        
+        # 触发 Celery 任务通知 WebSocket
+        celery_app.send_task(
+        "app.tasks.reminder.notify_reminder_creation",
+        args=[{
+            "reminder_id": result.id,
+            "reminder_time": result.reminder_time,
+            "message": result.message,
+            "user_id": result.user_id,
+            "note_id": result.note_id
+        }])
+        
+        
+        return result
 
     async def get_reminder(self, reminder_id: int, current_user) -> ReminderResponse:
         """

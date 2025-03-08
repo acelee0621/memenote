@@ -8,9 +8,11 @@ dependencies = [
     "aiosqlite>=0.21.0",
     "alembic>=1.14.1",
     "argon2-cffi>=23.1.0",
+    "celery>=5.4.0",
     "fastapi[standard]>=0.115.9",
     "passlib>=1.7.4",
     "pydantic-settings>=2.8.1",
     "pyjwt>=2.10.1",
+    "redis>=5.2.1",
     "sqlalchemy>=2.0.38",
 ]
