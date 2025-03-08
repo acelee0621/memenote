@@ -1,8 +1,10 @@
+import asyncio
+import json
+
 from fastapi import APIRouter
 from fastapi.websockets import WebSocket
 import redis.asyncio as redis
-import asyncio
-import json
+
 
 connected_clients = set()
 redis_client = redis.Redis(host="localhost", port=6379, db=0)

@@ -1,19 +1,24 @@
 from celery import Celery
 
 
-
 celery_app = Celery(
     "memenote",
     broker="amqp://user:bitnami@localhost:5672//",
-    backend="redis://localhost:6379/2"
+    backend="redis://localhost:6379/2",
+    include=["app.tasks.reminder_task"],
 )
 
-celery_app.conf.task_serializer = "json"
-celery_app.conf.accept_content = ["json"]
-celery_app.conf.result_serializer = "json"
+celery_app.conf.update(
+    task_serializer="json",
+    accept_content=["json"],  # Ignore other content
+    result_serializer="json",
+    timezone="Asia/Shanghai",
+    enable_utc=True,
+    result_expires=3600,
+    task_routes={
+        "app.tasks.reminder_task.*": {"queue": "reminder_queue"}
+    },
+)
 
 
-from app.tasks.reminder import notify_reminder_creation
-# celery_app.autodiscover_tasks(['app.tasks'])
-
-
+# uv run celery -A app.core.celery_app worker --loglevel=info --pool=threads -Q celery,reminder_queue --autoscale=4,2

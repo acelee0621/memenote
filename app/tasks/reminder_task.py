@@ -12,7 +12,7 @@ class CustomJSONEncoder(json.JSONEncoder):
         return super().default(obj)
 
 @celery_app.task
-def notify_reminder_creation(message: dict):
+def notify_reminder_action(message: dict):
     """
     Notify WebSocket clients about a new reminder creation.
     """

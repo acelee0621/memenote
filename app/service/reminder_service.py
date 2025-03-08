@@ -24,19 +24,22 @@ class ReminderService:
         """
         new_reminder = await self.repository.create(data, note_id, current_user)
         result = ReminderResponse.model_validate(new_reminder)
-        
+
         # 触发 Celery 任务通知 WebSocket
         celery_app.send_task(
-        "app.tasks.reminder.notify_reminder_creation",
-        args=[{
-            "reminder_id": result.id,
-            "reminder_time": result.reminder_time,
-            "message": result.message,
-            "user_id": result.user_id,
-            "note_id": result.note_id
-        }])
-        
-        
+            "app.tasks.reminder_task.notify_reminder_action",
+            args=[
+                {
+                    "action": "create",
+                    "reminder_id": result.id,
+                    "reminder_time": result.reminder_time,
+                    "message": result.message,
+                    "user_id": result.user_id,
+                    "note_id": result.note_id,
+                }
+            ],
+        )
+
         return result
 
     async def get_reminder(self, reminder_id: int, current_user) -> ReminderResponse:
@@ -83,7 +86,22 @@ class ReminderService:
             ReminderResponse: The updated reminder response.
         """
         reminder = await self.repository.update(data, reminder_id, current_user)
-        return ReminderResponse.model_validate(reminder)
+        result = ReminderResponse.model_validate(reminder)
+        celery_app.send_task(
+            "app.tasks.reminder_task.notify_reminder_action",
+            args=[
+                {
+                    "action": "update",
+                    "reminder_id": result.id,
+                    "reminder_time": result.reminder_time,
+                    "message": result.message,
+                    "is_acknowledged": result.is_acknowledged,
+                    "user_id": result.user_id,
+                    "note_id": result.note_id,
+                }
+            ],
+        )
+        return result
 
     async def delete_reminder(self, reminder_id: int, current_user) -> None:
         """
