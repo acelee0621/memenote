@@ -18,7 +18,7 @@ async def websocket_endpoint(websocket: WebSocket):
         
         async def listen_redis():
             while True:
-                message = await pubsub.get_message(ignore_subscribe_messages=True)
+                message = await pubsub.get_message(ignore_subscribe_messages=True, timeout=1.0)                
                 if message:
                     data = json.loads(message["data"].decode())
                     for client in connected_clients:
@@ -31,6 +31,8 @@ async def websocket_endpoint(websocket: WebSocket):
     except Exception:
         connected_clients.remove(websocket)
         await pubsub.unsubscribe("reminder_notifications")
+
+
         
         
 router = APIRouter(tags=["WebSocket"])

@@ -1,3 +1,5 @@
+from datetime import datetime, timezone
+
 from app.repository.reminder_repo import ReminderRepository
 from app.schemas.schemas import ReminderCreate, ReminderUpdate, ReminderResponse
 from app.core.celery_app import celery_app
@@ -25,19 +27,28 @@ class ReminderService:
         new_reminder = await self.repository.create(data, note_id, current_user)
         result = ReminderResponse.model_validate(new_reminder)
 
-        # 触发 Celery 任务通知 WebSocket
+        # 推送 CRUD 创建通知
+        reminder_data = {
+            "action": "create",
+            "reminder_id": result.id,
+            "reminder_time": result.reminder_time,
+            "message": result.message,
+            "is_acknowledged": result.is_acknowledged,
+            "is_triggered": result.is_triggered,
+            "user_id": result.user_id,
+            "note_id": result.note_id,
+        }
         celery_app.send_task(
             "app.tasks.reminder_task.notify_reminder_action",
-            args=[
-                {
-                    "action": "create",
-                    "reminder_id": result.id,
-                    "reminder_time": result.reminder_time,
-                    "message": result.message,
-                    "user_id": result.user_id,
-                    "note_id": result.note_id,
-                }
-            ],
+            args=[reminder_data],
+            task_id=f"notify_reminder_{result.id}",
+        )
+
+        celery_app.send_task(
+            "app.tasks.reminder_task.trigger_reminder",
+            args=[reminder_data],
+            eta=result.reminder_time,
+            task_id=f"trigger_reminder_{result.id}",  # 唯一任务 ID
         )
 
         return result
@@ -87,19 +98,18 @@ class ReminderService:
         """
         reminder = await self.repository.update(data, reminder_id, current_user)
         result = ReminderResponse.model_validate(reminder)
+        reminder_data = {
+            "action": "update",
+            "reminder_id": result.id,
+            "reminder_time": result.reminder_time,
+            "message": result.message,
+            "is_acknowledged": result.is_acknowledged,
+            "user_id": result.user_id,
+            "note_id": result.note_id,
+        }
         celery_app.send_task(
             "app.tasks.reminder_task.notify_reminder_action",
-            args=[
-                {
-                    "action": "update",
-                    "reminder_id": result.id,
-                    "reminder_time": result.reminder_time,
-                    "message": result.message,
-                    "is_acknowledged": result.is_acknowledged,
-                    "user_id": result.user_id,
-                    "note_id": result.note_id,
-                }
-            ],
+            args=[reminder_data],
         )
         return result
 
