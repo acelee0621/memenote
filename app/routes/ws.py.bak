@@ -1,0 +1,60 @@
+import weakref
+import asyncio
+import json
+
+from fastapi import APIRouter, WebSocketDisconnect
+from fastapi.websockets import WebSocket
+import redis.asyncio as redis
+
+router = APIRouter(tags=["WebSocket"])
+
+# 使用 WeakSet 自动管理 WebSocket 连接
+connected_clients = weakref.WeakSet()
+redis_client = redis.Redis(host="localhost", port=6379, db=0)
+REDIS_CHANNEL = "reminder_notifications"
+
+# **全局 Redis 监听任务**
+async def listen_redis():
+    """ 监听 Redis 频道，向所有 WebSocket 客户端广播消息 """
+    pubsub = redis_client.pubsub()
+    await pubsub.subscribe(REDIS_CHANNEL)
+    print(f"Subscribed to Redis channel: {REDIS_CHANNEL}")
+
+    try:
+        while True:
+            message = await pubsub.get_message(ignore_subscribe_messages=True)  # 阻塞等待消息
+            if message:
+                data = json.loads(message["data"].decode())
+                print(f"Received message from Redis: {data}")
+                for client in connected_clients:
+                    try:
+                        await client.send_json(data)
+                    except Exception as e:
+                        print(f"Error sending to client: {e}")
+    except asyncio.CancelledError:
+        print("Redis listener task cancelled")
+    except Exception as e:
+        print(f"Redis listener error: {e}")
+    finally:
+        await pubsub.unsubscribe(REDIS_CHANNEL)
+        print("Unsubscribed from Redis")
+
+# **全局任务**
+redis_task = asyncio.create_task(listen_redis())
+
+@router.websocket("/ws")
+async def websocket_endpoint(websocket: WebSocket):
+    """ 处理 WebSocket 连接 """
+    await websocket.accept()
+    connected_clients.add(websocket)  # 连接自动加入 WeakSet
+    print(f"WebSocket connected. Total clients: {len(connected_clients)}")
+
+    try:
+        while True:
+            await websocket.receive_text()  # 保持 WebSocket 连接
+    except WebSocketDisconnect:
+        print("WebSocket disconnected")
+    except Exception as e:
+        print(f"WebSocket error: {e}")
+    finally:
+        print(f"Remaining WebSocket clients: {len(connected_clients)}")

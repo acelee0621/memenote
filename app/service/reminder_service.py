@@ -1,5 +1,3 @@
-from datetime import datetime, timezone
-
 from app.repository.reminder_repo import ReminderRepository
 from app.schemas.schemas import ReminderCreate, ReminderUpdate, ReminderResponse
 from app.core.celery_app import celery_app
