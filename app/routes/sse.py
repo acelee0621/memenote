@@ -1,16 +1,18 @@
 import asyncio
 import json
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter
 from sse_starlette.sse import EventSourceResponse
 import redis.asyncio as redis
 
-from app.core.security import get_current_user
-from app.schemas.schemas import UserResponse
 
 router = APIRouter(tags=["SSE"])
 
-redis_client = redis.Redis(host="localhost", port=6379, db=0)
+
 # current_user: UserResponse = Depends(get_current_user)
+redis_client = redis.from_url(
+    "redis://localhost:6379/0",
+    health_check_interval=30,
+)
 
 
 @router.get("/notifications/stream")
@@ -36,9 +38,7 @@ async def notification_stream():
                     print(f"SSE sending: {data}")
                     yield {
                         "event": "notification",
-                        "data": json.dumps(
-                            data, ensure_ascii=False
-                        ),  # 客户端接收 JSON 字符串
+                        "data": json.dumps(data, ensure_ascii=False),
                     }
                 await asyncio.sleep(0.01)
         except Exception as e:

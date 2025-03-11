@@ -6,7 +6,10 @@ import redis
 from app.core.celery_app import celery_app
 
 
-redis_client = redis.Redis(host="localhost", port=6379, db=0)
+redis_client = redis.from_url(
+    "redis://localhost:6379/0",
+    health_check_interval=30,
+)
 
 
 class CustomJSONEncoder(json.JSONEncoder):
@@ -18,7 +21,7 @@ class CustomJSONEncoder(json.JSONEncoder):
 
 @celery_app.task(name="app.tasks.reminder_task.notify_reminder_action")
 def notify_reminder_action(message: dict):
-    user_id = message["user_id"]
+    # user_id = message["user_id"]
     # channel = f"reminder_notifications_{user_id}"
     channel = "reminder_notifications"
     print(f"Publishing to {channel}: {message}")
@@ -30,7 +33,7 @@ def notify_reminder_action(message: dict):
 @celery_app.task(name="app.tasks.reminder_task.trigger_reminder")
 def trigger_reminder(reminder_data: dict):
     reminder_data["action"] = "trigger"
-    user_id = reminder_data["user_id"]
+    # user_id = reminder_data["user_id"]
     # channel = f"reminder_notifications_{user_id}"
     channel = "reminder_notifications"
     print(f"Publishing to {channel}: {reminder_data}")
