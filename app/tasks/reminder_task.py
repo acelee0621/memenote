@@ -18,20 +18,22 @@ class CustomJSONEncoder(json.JSONEncoder):
 
 @celery_app.task(name="app.tasks.reminder_task.notify_reminder_action")
 def notify_reminder_action(message: dict):
-    """
-    Notify WebSocket clients about a new reminder creation.
-    """
+    user_id = message["user_id"]
+    # channel = f"reminder_notifications_{user_id}"
+    channel = "reminder_notifications"
+    print(f"Publishing to {channel}: {message}")
     message_json = json.dumps(message, cls=CustomJSONEncoder)
     # 发布到 Pub/Sub 频道
-    redis_client.publish("reminder_notifications", message_json)
+    redis_client.publish(channel, message_json)
 
 
 @celery_app.task(name="app.tasks.reminder_task.trigger_reminder")
 def trigger_reminder(reminder_data: dict):
-    """
-    Handle the triggering of a reminder and update the database asynchronously.
-    """
     reminder_data["action"] = "trigger"
+    user_id = reminder_data["user_id"]
+    # channel = f"reminder_notifications_{user_id}"
+    channel = "reminder_notifications"
+    print(f"Publishing to {channel}: {reminder_data}")
     message_json = json.dumps(reminder_data, cls=CustomJSONEncoder)
     # 发布到 Pub/Sub 频道
-    redis_client.publish("reminder_notifications", message_json)
+    redis_client.publish(channel, message_json)

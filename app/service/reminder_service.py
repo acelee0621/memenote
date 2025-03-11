@@ -39,7 +39,7 @@ class ReminderService:
         celery_app.send_task(
             "app.tasks.reminder_task.notify_reminder_action",
             args=[reminder_data],
-            task_id=f"notify_reminder_{result.id}",
+            task_id=f"notify_reminder_create_{result.id}",
         )
 
         celery_app.send_task(
@@ -108,6 +108,7 @@ class ReminderService:
         celery_app.send_task(
             "app.tasks.reminder_task.notify_reminder_action",
             args=[reminder_data],
+            task_id=f"notify_reminder_update_{result.id}",
         )
         return result
 
