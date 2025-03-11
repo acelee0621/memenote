@@ -36,7 +36,9 @@ async def notification_stream():
                     print(f"SSE sending: {data}")
                     yield {
                         "event": "notification",
-                        "data": json.dumps(data),  # 客户端接收 JSON 字符串
+                        "data": json.dumps(
+                            data, ensure_ascii=False
+                        ),  # 客户端接收 JSON 字符串
                     }
                 await asyncio.sleep(0.01)
         except Exception as e:
