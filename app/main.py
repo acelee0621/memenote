@@ -38,7 +38,7 @@ app.include_router(user_routes.router)  # Users Router
 app.include_router(note_routes.router)  # Notes Router
 app.include_router(todo_routes.router)  # Todos Router
 app.include_router(reminder_routes.router)  # Reminders Router
-# app.include_router(ws.router)  # WebSocket Router
+app.include_router(ws.router)  # WebSocket Router
 app.include_router(sse.router)  # SSE Router
 
 
