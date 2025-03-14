@@ -1,3 +1,4 @@
+import os
 import asyncio
 import json
 from fastapi import APIRouter
@@ -7,10 +8,12 @@ import redis.asyncio as redis
 
 router = APIRouter(tags=["SSE"])
 
+redis_host = os.getenv("REDIS_HOST", "localhost:6379")
+REDIS_URL = f"redis://{redis_host}/0"
 
 # current_user: UserResponse = Depends(get_current_user)
 redis_client = redis.from_url(
-    "redis://localhost:6379/0",
+    REDIS_URL,
     health_check_interval=30,
 )
 

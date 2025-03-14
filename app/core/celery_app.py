@@ -3,17 +3,17 @@ import os
 from celery import Celery
 
 
-broker_host = os.getenv("RABBITMQ_HOST", "localhost")
-RABBITMQ_URL = f"amqp://user:bitnami@{broker_host}:5672//"
+broker_host = os.getenv("BROKER_HOST", "localhost:5672")
+CELERY_BROKER_URL = f"amqp://user:bitnami@{broker_host}//"
 
-redis_host = os.getenv("REDIS_HOST", "localhost")
-REDIS_URL = f"redis://{redis_host}:6379/2"
+redis_host = os.getenv("REDIS_HOST", "localhost:6379")
+CELERY_RESULT_BACKEND = f"redis://{redis_host}/2"
 
 
 celery_app = Celery(
     "memenote",
-    broker=RABBITMQ_URL,
-    backend=REDIS_URL,
+    broker=CELERY_BROKER_URL,
+    backend=CELERY_RESULT_BACKEND,
     include=["app.tasks.reminder_task"],
 )
 
