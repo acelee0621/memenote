@@ -1,37 +1,33 @@
 
 services:
   app:
-    image: memenote-app:latest  # 指定镜像名称
-    build:
+    image: memenote-app:latest
+    build: 
+      x-bake: true
       context: .
       dockerfile: Dockerfile
-    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --workers 2  # 生产模式
-    # command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload  # 开发模式    
+    pull_policy: never
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --workers 2    
     ports:
       - "8000:8000"
     depends_on:
       - redis
-      - rabbitmq
-    # volumes:
-      # - ./app:/app/app  # 开发时热重载
+      - rabbitmq    
     environment:
       - BROKER_HOST=rabbitmq:5672      
       - REDIS_HOST=redis:6379
-      - SQLITE_DB_PATH=/app/data/memenote.sqlite3
-    
+      - SQLITE_DB_PATH=/app/data/memenote.sqlite3    
 
   celery:
-    image: memenote-app:latest    
-    command: celery -A app.core.celery_app worker --loglevel=info -Q celery,reminder_queue --autoscale=4,2    
+    image: memenote-app:latest
+    pull_policy: never    
+    command: celery -A app.core.celery_app worker -l info -Q celery,reminder_queue --autoscale=4,2    
     depends_on:
       - redis
-      - rabbitmq
-    # volumes:
-      # - ./app:/app/app  # 开发时热重载
+      - rabbitmq    
     environment:
       - BROKER_HOST=rabbitmq:5672      
-      - REDIS_HOST=redis:6379
-    
+      - REDIS_HOST=redis:6379    
 
   rabbitmq:
     image: bitnami/rabbitmq:latest
@@ -41,21 +37,20 @@ services:
     environment:
       - RABBITMQ_MANAGEMENT_ALLOW_WEB_ACCESS=true      
     volumes:
-      - rabbitmq_data:/bitnami/rabbitmq/mnesia
-   
+      - rabbitmq_data:/bitnami/rabbitmq/mnesia   
 
   redis:
     image: bitnami/redis:latest
     ports:
       - "6379:6379"
     environment:
-      - ALLOW_EMPTY_PASSWORD=yes
-      - REDIS_AOF_ENABLED=yes
+      - ALLOW_EMPTY_PASSWORD=yes      
     volumes:
-      - redis_data:/bitnami/redis/data
-   
+      - redis_data:/bitnami/redis/data   
 
 
 volumes:
   rabbitmq_data:
+    driver: local
   redis_data:
+    driver: local
