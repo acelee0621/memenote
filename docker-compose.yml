@@ -1,4 +1,6 @@
 
+name: memenote
+
 services:
   app:
     image: memenote-app:latest

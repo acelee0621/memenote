@@ -1,4 +1,5 @@
 
+name: memenote-dev
 
 services:
   app:
@@ -11,5 +12,5 @@ services:
       - ./app:/app/app
 
 
-# docker-compose up --build  
-# docker-compose -f docker-compose.yml -f docker-compose.dev.yml up --build
+# docker-compose up -d --build  
+# docker-compose -f docker-compose.yml -f docker-compose.dev.yml up -d --build --watch

@@ -1,0 +1,37 @@
+
+name: memenote-dev
+
+services:
+  app:
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+    volumes:
+      - ./app:/app/app
+    # environment:
+    #   - PATH=/app/.venv/bin:$PATH    
+    develop:
+      watch:
+        - path: ./app
+          action: sync
+          target: /app/app
+          ignore:
+            - __pycache__/
+            - "*.pyc"
+
+  celery:
+    command: celery -A app.core.celery_app worker -l info -Q celery,reminder_queue --autoscale=4,2
+    volumes:
+      - ./app:/app/app
+    # environment:
+    #   - PATH=/app/.venv/bin:$PATH    
+    develop:
+      watch:
+        - path: ./app
+          action: restart
+          target: /app/app
+          ignore:
+            - __pycache__/
+            - "*.pyc"
+
+
+# docker-compose up -d --build  
+# docker-compose -f docker-compose.yml -f docker-compose.dev.test.yml up --build --watch
