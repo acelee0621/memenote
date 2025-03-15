@@ -15,8 +15,10 @@ services:
     volumes:
       - data:/app/data
     depends_on:
-      - redis
-      - rabbitmq    
+      redis:
+        condition: service_started
+      rabbitmq:
+        condition: service_started    
     environment:
       - BROKER_HOST=rabbitmq:5672      
       - REDIS_HOST=redis:6379
@@ -27,8 +29,13 @@ services:
     pull_policy: never    
     command: celery -A app.core.celery_app worker -l info -Q celery,reminder_queue --autoscale=4,2    
     depends_on:
-      - redis
-      - rabbitmq    
+      redis:
+        condition: service_started
+      rabbitmq:
+        condition: service_started
+      app:
+        condition: service_started
+        restart: true    
     environment:
       - BROKER_HOST=rabbitmq:5672      
       - REDIS_HOST=redis:6379    
