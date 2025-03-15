@@ -45,7 +45,7 @@ RUN mkdir -p /app/data && chown appuser:appuser /app/data
 # ENV SQLITE_DB_PATH="/var/lib/app/data/todos.sqlite3"
 
 # Health Check
-HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
+HEALTHCHECK --interval=30s --timeout=10s --start-period=20s --retries=3 \
     CMD [ "curl", "-f", "http://localhost:8000/health" ]    
 
 # 运行 FastAPI 应用

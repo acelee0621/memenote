@@ -15,9 +15,9 @@ services:
       - data:/app/data
     depends_on:
       redis:
-        condition: service_started
+        condition: service_healthy
       rabbitmq:
-        condition: service_started    
+        condition: service_healthy    
     environment:
       - BROKER_HOST=rabbitmq:5672      
       - REDIS_HOST=redis:6379
@@ -29,11 +29,11 @@ services:
     command: celery -A app.core.celery_app worker -l info -Q celery,reminder_queue --autoscale=4,2    
     depends_on:
       redis:
-        condition: service_started
+        condition: service_healthy
       rabbitmq:
-        condition: service_started
+        condition: service_healthy
       app:
-        condition: service_started
+        condition: service_healthy
         restart: true    
     environment:
       - BROKER_HOST=rabbitmq:5672      
@@ -47,7 +47,13 @@ services:
     environment:
       - RABBITMQ_MANAGEMENT_ALLOW_WEB_ACCESS=true      
     volumes:
-      - rabbitmq_data:/bitnami/rabbitmq/mnesia   
+      - rabbitmq_data:/bitnami/rabbitmq/mnesia
+    healthcheck:
+      test: ["CMD", "rabbitmqctl", "status"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s   
 
   redis:
     image: bitnami/redis:latest
@@ -56,7 +62,13 @@ services:
     environment:
       - ALLOW_EMPTY_PASSWORD=yes      
     volumes:
-      - redis_data:/bitnami/redis/data   
+      - redis_data:/bitnami/redis/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 20s   
 
 
 volumes:
