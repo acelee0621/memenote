@@ -4,8 +4,7 @@ name: memenote
 services:
   app:
     image: memenote-app:latest
-    build: 
-      x-bake: true
+    build:       
       context: .
       dockerfile: Dockerfile
     pull_policy: never
