@@ -1,7 +1,6 @@
-from fastapi import FastAPI, Response, Depends
+from fastapi import FastAPI, Response
 from fastapi.middleware.cors import CORSMiddleware
-from strawberry.fastapi import GraphQLRouter
-from sqlalchemy.ext.asyncio import AsyncSession
+
 
 from app.core.config import settings
 from app.core.logging import setup_logging
@@ -15,9 +14,6 @@ from app.routes import (
     ws,
     sse,
 )
-from app.core.database import get_db
-from app.core.security import get_current_user
-from app.graphql.schema import schema
 
 
 # Set up logging configuration
@@ -45,18 +41,6 @@ app.include_router(todo_routes.router)  # Todos Router
 app.include_router(reminder_routes.router)  # Reminders Router
 app.include_router(ws.router)  # WebSocket Router
 app.include_router(sse.router)  # SSE Router
-
-# GraphQL 上下文
-async def get_context(
-    db: AsyncSession = Depends(get_db),
-    current_user=Depends(get_current_user)
-):
-    return {"db": db, "current_user": current_user}
-
-# GraphQL 路由
-graphql_app = GraphQLRouter(schema, context_getter=get_context)
-app.include_router(graphql_app, prefix="/graphql")
-
 
 
 @app.get("/health")
