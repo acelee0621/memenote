@@ -1,0 +1,105 @@
+name: memenote
+
+services:
+  traefik:
+    image: traefik:latest
+    ports:
+      - "80:80"
+      - "443:443"
+      - "8080:8080"  # Traefik 仪表盘
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - ./traefik/certs:/etc/traefik/certs  # 挂载自签名证书目录
+      - ./traefik/traefik.yaml:/etc/traefik/traefik.yaml
+    # command:
+    #   - "--api.insecure=true"  # 本地测试用，生产中关闭
+    #   - "--providers.docker=true"
+    #   - "--providers.docker.exposedbydefault=false"
+    #   - "--entrypoints.web.address=:80"
+    #   - "--entrypoints.web.http.redirections.entryPoint.to=websecure"  # HTTP 重定向到 HTTPS
+    #   - "--entrypoints.web.http.redirections.entryPoint.scheme=https"
+    #   - "--entrypoints.websecure.address=:443"
+    #   - "--entrypoints.websecure.http3=true"  # 可选：启用 HTTP/3
+    #   - "--serverstransport.insecureskipverify=true"  # 跳过自签名证书验证
+    #   - "--log.level=DEBUG"  # 调试日志，便于排查问题
+
+  app:
+    image: memenote-app:latest
+    build:
+      context: .
+      dockerfile: Dockerfile
+    pull_policy: never
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --workers 2
+    volumes:
+      - data:/app/data
+    depends_on:
+      redis:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    environment:
+      - BROKER_HOST=rabbitmq:5672
+      - REDIS_HOST=redis:6379
+      - SQLITE_DB_PATH=/app/data/memenote.sqlite3
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.memenote.rule=Host(`localhost`)"  # 使用 localhost
+      - "traefik.http.routers.memenote.entrypoints=websecure"
+      - "traefik.http.routers.memenote.tls=true"  # 启用 TLS
+      - "traefik.http.routers.memenote.tls.certresolver=myresolver"  # 指定证书解析器
+      - "traefik.http.services.memenote.loadbalancer.server.port=8000"
+
+  celery:
+    image: memenote-app:latest
+    pull_policy: never
+    command: celery -A app.core.celery_app worker -l info -Q celery,reminder_queue --autoscale=4,2
+    depends_on:
+      redis:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+      app:
+        condition: service_healthy
+        restart: true
+    environment:
+      - BROKER_HOST=rabbitmq:5672
+      - REDIS_HOST=redis:6379
+
+  rabbitmq:
+    image: bitnami/rabbitmq:latest
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    environment:
+      - RABBITMQ_MANAGEMENT_ALLOW_WEB_ACCESS=true
+    volumes:
+      - rabbitmq_data:/bitnami/rabbitmq/mnesia
+    healthcheck:
+      test: ["CMD", "rabbitmqctl", "status"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+  redis:
+    image: bitnami/redis:latest
+    ports:
+      - "6379:6379"
+    environment:
+      - ALLOW_EMPTY_PASSWORD=yes
+    volumes:
+      - redis_data:/bitnami/redis/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+
+volumes:
+  data:
+    driver: local
+  rabbitmq_data:
+    driver: local
+  redis_data:
+    driver: local
