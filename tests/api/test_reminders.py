@@ -16,7 +16,11 @@ from app.schemas.schemas import ReminderResponse, NoteResponse
 def test_create_reminder(
     client: TestClient, mock_user, note_id, expected_status, expected_note_id, message
 ):
-    reminder_time = (datetime.now(timezone.utc) + timedelta(days=1)).isoformat().replace("+00:00", "Z")
+    reminder_time = (
+        (datetime.now(timezone.utc) + timedelta(days=1))
+        .isoformat()
+        .replace("+00:00", "Z")
+    )
     # 处理 note_id：如果是 "valid"，动态创建 note
     actual_note_id = note_id
     if note_id == "valid":
