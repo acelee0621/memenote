@@ -1,14 +1,7 @@
 from datetime import datetime, timezone
 from typing import Optional
 
-from sqlalchemy import (
-    Boolean,
-    ForeignKey,
-    Integer,
-    String,
-    Text,
-    DateTime,
-)
+from sqlalchemy import Boolean, ForeignKey, Integer, String, Text, DateTime
 from sqlalchemy.orm import Mapped, mapped_column, relationship, DeclarativeBase
 
 
@@ -39,7 +32,6 @@ class User(Base, DateTimeMixin):
     email: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
     full_name: Mapped[Optional[str]] = mapped_column(String(100), nullable=True)
     password_hash: Mapped[str] = mapped_column(String(512), nullable=False)
-    
 
     # 关系映射
     notes: Mapped[list["Note"]] = relationship(
@@ -51,7 +43,7 @@ class User(Base, DateTimeMixin):
     reminders: Mapped[list["Reminder"]] = relationship(
         "Reminder", back_populates="user", cascade="all, delete-orphan"
     )
-    
+
     def __repr__(self):
         return f"<User(id={self.id}, username={self.username})>"
 
@@ -66,7 +58,6 @@ class Note(Base, DateTimeMixin):
     )
     title: Mapped[str] = mapped_column(String(100), nullable=False, default="Untitled")
     content: Mapped[str] = mapped_column(Text, nullable=False)
-    
 
     # 关系映射
     user: Mapped["User"] = relationship("User", back_populates="notes")
@@ -76,7 +67,7 @@ class Note(Base, DateTimeMixin):
     reminders: Mapped[list["Reminder"]] = relationship(
         "Reminder", back_populates="note", lazy="selectin"
     )
-    
+
     def __repr__(self):
         return f"<Note(id={self.id}, title={self.title})>"
 
@@ -98,7 +89,7 @@ class Todo(Base, DateTimeMixin):
     # 关系映射
     user: Mapped["User"] = relationship("User", back_populates="todos")
     note: Mapped[Optional["Note"]] = relationship("Note", back_populates="todos")
-    
+
     def __repr__(self):
         return f"<Todo(id={self.id}, content={self.content})>"
 
@@ -113,7 +104,7 @@ class Reminder(Base, DateTimeMixin):
     )
     note_id: Mapped[Optional[int]] = mapped_column(
         ForeignKey("notes.id", ondelete="SET NULL"), nullable=True
-    )    
+    )
     reminder_time: Mapped[datetime] = mapped_column(DateTime, nullable=False)
     message: Mapped[str] = mapped_column(String(255), nullable=False)
     is_triggered: Mapped[bool] = mapped_column(Boolean, default=False)
@@ -122,7 +113,6 @@ class Reminder(Base, DateTimeMixin):
     # 关系映射
     user: Mapped["User"] = relationship("User", back_populates="reminders")
     note: Mapped[Optional["Note"]] = relationship("Note", back_populates="reminders")
-    
-    
+
     def __repr__(self):
         return f"<Reminder(id={self.id}, message={self.message})>"
