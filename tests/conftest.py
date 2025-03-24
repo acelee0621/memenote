@@ -1,5 +1,5 @@
 import pytest_asyncio
-from typing import AsyncGenerator
+from typing import AsyncGenerator, Generator
 from fastapi.testclient import TestClient
 from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine, AsyncSession
 
@@ -8,9 +8,6 @@ from app.models.models import Base
 from app.core.database import get_db
 from app.core.security import get_current_user
 from app.schemas.schemas import UserResponse
-
-# 创建测试客户端
-client = TestClient(app)
 
 
 # 使用内存中的 SQLite 数据库进行测试
@@ -65,3 +62,17 @@ def mock_user():
         created_at="2023-10-01T00:00:00Z",
         updated_at="2023-10-01T00:00:00Z",
     )
+
+
+# 测试客户端 fixture，包含依赖覆盖和清理
+@pytest_asyncio.fixture
+def client(override_get_db, mock_user) -> Generator[TestClient, None, None]:
+    # 设置依赖项覆盖
+    app.dependency_overrides[get_db] = override_get_db
+    app.dependency_overrides[get_current_user] = lambda: mock_user
+    # 创建 TestClient
+    test_client = TestClient(app)
+    # 提供给测试使用
+    yield test_client
+    # 清理依赖项覆盖
+    app.dependency_overrides.clear()
