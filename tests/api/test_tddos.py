@@ -156,5 +156,29 @@ def test_delete_todo(client: TestClient):
     get_response = client.get(f"/todos/{todo_id}")
     assert get_response.status_code == 404
 
+# 测试无效 note_id
+def test_get_todos_with_invalid_note_id(client: TestClient):
+    response = client.get("/todos?note_id=9999")
+    assert response.status_code == 404  # 假设服务返回 404
 
-
+# 测试 search 过滤
+def test_get_todos_by_search(client: TestClient):
+    client.post("/todos/", json={"content": "Searchable Todo"})
+    client.post("/todos/", json={"content": "Other Todo"})
+    response = client.get("/todos?search=Searchable")
+    assert response.status_code == 200
+    todos = [TodoResponse.model_validate(todo) for todo in response.json()]
+    assert len(todos) == 1
+    assert todos[0].content == "Searchable Todo"
+    
+    
+# 测试 status 过滤
+def test_get_todos_by_status(client: TestClient):
+    client.post("/todos/", json={"content": "Done Todo"})
+    client.post("/todos/", json={"content": "Undone Todo"})
+    client.patch("/todos/1", json={"is_completed": True})    
+    response = client.get("/todos?status=finished")
+    assert response.status_code == 200
+    todos = [TodoResponse.model_validate(todo) for todo in response.json()]
+    assert len(todos) == 1
+    assert todos[0].content == "Done Todo"

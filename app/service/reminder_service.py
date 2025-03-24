@@ -1,3 +1,4 @@
+from datetime import timezone
 from app.repository.reminder_repo import ReminderRepository
 from app.schemas.schemas import ReminderCreate, ReminderUpdate, ReminderResponse
 from app.core.celery_app import celery_app
@@ -22,7 +23,11 @@ class ReminderService:
         Returns:
             ReminderResponse: The response model containing the details of the created reminder.
         """
+        reminder_time_utc = data.reminder_time if data.reminder_time.tzinfo else data.reminder_time.replace(tzinfo=timezone.utc)
+        data.reminder_time = reminder_time_utc
         new_reminder = await self.repository.create(data, note_id, current_user)
+        if new_reminder.reminder_time.tzinfo is None:
+            new_reminder.reminder_time = new_reminder.reminder_time.replace(tzinfo=timezone.utc)
         result = ReminderResponse.model_validate(new_reminder)
 
         # 推送 CRUD 创建通知

@@ -45,15 +45,16 @@ async def create_todo(
 
 
 @router.get("/todos", response_model=list[TodoResponse])
-async def get_all_todos(
+async def get_all_todos(    
     params: Annotated[TodoQueryParams, Query()],
+    note_id: int | None = Depends(get_note_id),
     service: TodoService = Depends(get_todo_service),
     current_user: UserResponse = Depends(get_current_user),
 ) -> list[TodoResponse]:
     """Get all todos."""
     try:
         all_todos = await service.get_todos(
-            note_id=params.note_id,
+            note_id=note_id,
             status=params.status,
             search=params.search,
             order_by=params.order_by,

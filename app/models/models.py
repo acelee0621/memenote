@@ -105,7 +105,7 @@ class Reminder(Base, DateTimeMixin):
     note_id: Mapped[Optional[int]] = mapped_column(
         ForeignKey("notes.id", ondelete="SET NULL"), nullable=True
     )
-    reminder_time: Mapped[datetime] = mapped_column(DateTime, nullable=False)
+    reminder_time: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
     message: Mapped[str] = mapped_column(String(255), nullable=False)
     is_triggered: Mapped[bool] = mapped_column(Boolean, default=False)
     is_acknowledged: Mapped[bool] = mapped_column(Boolean, default=False)

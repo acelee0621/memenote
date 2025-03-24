@@ -22,9 +22,9 @@ class NoteQueryParams(CommonQueryParams):
 
 
 class TodoQueryParams(CommonQueryParams):
-    note_id: Annotated[
-        int | None, Field(default=None, description="Filter by Note's ID")
-    ]
+    # note_id: Annotated[
+    #     int | None, Field(default=None, description="Filter by Note's ID")
+    # ]
     status: Annotated[
         Literal["finished", "unfinished"] | None,
         Field(
