@@ -11,7 +11,6 @@ from app.core.security import get_current_user
 from app.schemas.schemas import UserResponse
 
 
-
 TEST_SQLITE_DATABASE_URL = "sqlite+aiosqlite:///:memory:"
 
 
@@ -29,10 +28,10 @@ TestingSessionLocal = async_sessionmaker(
 
 @pytest_asyncio.fixture
 async def setup_db():
-    async with test_engine.begin() as conn:       
+    async with test_engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
     yield
-    async with test_engine.begin() as conn:        
+    async with test_engine.begin() as conn:
         await conn.run_sync(Base.metadata.drop_all)
 
 
@@ -58,8 +57,8 @@ def mock_user():
         username="testuser",
         full_name="Test User",
         email="test@example.com",
-        created_at=parse('2023-10-01T00:00:00Z'),
-        updated_at=parse('2023-10-01T00:00:00Z'),
+        created_at=parse("2023-10-01T00:00:00Z"),
+        updated_at=parse("2023-10-01T00:00:00Z"),
     )
 
 
@@ -75,5 +74,9 @@ def client(override_get_db, mock_user) -> Generator[TestClient, None, None]:
     yield test_client
     # 清理依赖项覆盖
     app.dependency_overrides.clear()
-    
-    
+
+
+# 不带认证的默认 client
+@pytest_asyncio.fixture
+def non_auth_client():
+    return TestClient(app)

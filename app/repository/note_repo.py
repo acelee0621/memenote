@@ -1,4 +1,4 @@
-from sqlalchemy import select, desc, asc
+from sqlalchemy import select, desc, asc, or_
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -66,7 +66,10 @@ class NoteRepository:
         query = select(Note).where(Note.user_id == current_user.id)
 
         if search:
-            query = query.where(Note.content.ilike(f"%{search}%"))
+            query = query.where(or_(
+                    Note.content.ilike(f"%{search}%"),
+                    Note.title.ilike(f"%{search}%")
+                ))
 
         if order_by:
             if order_by == "created_at desc":
