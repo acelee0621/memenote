@@ -53,7 +53,7 @@ def test_delete_note(client):
 def test_get_all_notes_empty(client: TestClient, mock_user):
     response = client.get("/notes/")
     assert response.status_code == 200
-    assert response.json() == []  # 初始无笔记
+    assert response.json() == []
 
 
 def test_get_all_notes_with_data(client: TestClient, mock_user):
@@ -96,7 +96,7 @@ def test_create_note_failure(client: TestClient, mocker, mock_user):
 
 def test_get_note_not_found(client: TestClient, mock_user):
     response = client.get("/notes/999")
-    assert response.status_code == 404  # 假设服务抛出 404
+    assert response.status_code == 404
 
 
 def test_update_note_not_found(client: TestClient, mock_user):
@@ -120,6 +120,6 @@ def test_unauthorized_access(non_auth_client: TestClient):
 
 
 def test_create_note_long_title(client: TestClient, mock_user):
-    long_title = "a" * 256  # 假设最大长度 255
+    long_title = "a" * 256
     response = client.post("/notes/", json={"title": long_title, "content": "test"})
-    assert response.status_code == 422  # 假设有长度限制
+    assert response.status_code == 422 
