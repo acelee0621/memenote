@@ -31,7 +31,7 @@ class UserResponse(BaseSchema):
 
 # 笔记相关模型
 class NoteCreate(BaseModel):
-    title: str
+    title: str = Field(..., max_length=100)
     content: str
     
     

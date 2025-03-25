@@ -159,7 +159,7 @@ def test_delete_todo(client: TestClient):
 # 测试无效 note_id
 def test_get_todos_with_invalid_note_id(client: TestClient):
     response = client.get("/todos?note_id=9999")
-    assert response.status_code == 404  # 假设服务返回 404
+    assert response.status_code == 404
 
 # 测试 search 过滤
 def test_get_todos_by_search(client: TestClient):

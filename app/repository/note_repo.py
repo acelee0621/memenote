@@ -56,10 +56,13 @@ class NoteRepository:
         return note
 
     async def get_all(
-        self, search: str | None, order_by: str | None, limit: int,
-    offset: int, current_user
+        self,
+        search: str | None,
+        order_by: str | None,
+        limit: int,
+        offset: int,
+        current_user,
     ) -> list[Note]:
-        
         query = select(Note).where(Note.user_id == current_user.id)
 
         if search:
@@ -70,7 +73,7 @@ class NoteRepository:
                 query = query.order_by(desc(Note.created_at))
             elif order_by == "created_at asc":
                 query = query.order_by(asc(Note.created_at))
-                
+
         # 分页功能
         query = query.limit(limit).offset(offset)
 

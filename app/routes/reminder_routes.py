@@ -54,13 +54,14 @@ async def create_reminder(
 @router.get("/reminders", response_model=list[ReminderResponse])
 async def get_all_reminders(
     params: Annotated[ReminderQueryParams, Query()],
+    note_id: int | None = Depends(get_note_id),
     service: ReminderService = Depends(get_reminder_service),
     current_user: UserResponse = Depends(get_current_user),
 ) -> list[ReminderResponse]:
     """Get all reminders."""
     try:
         all_reminders = await service.get_reminders(
-            note_id=params.note_id,
+            note_id=note_id,
             search=params.search,
             order_by=params.order_by,
             current_user=current_user,

@@ -35,6 +35,4 @@ class TodoQueryParams(CommonQueryParams):
 
 
 class ReminderQueryParams(CommonQueryParams):
-    note_id: Annotated[
-        int | None, Field(default=None, description="Filter by Note's ID")
-    ]
+    pass

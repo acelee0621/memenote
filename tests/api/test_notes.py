@@ -46,3 +46,66 @@ def test_delete_note(client):
     assert response.status_code == 204
     get_resp = client.get(f"/notes/{note_id}")
     assert get_resp.status_code == 404
+    
+    
+def test_get_all_notes_empty(client: TestClient, mock_user):
+    response = client.get("/notes/")
+    assert response.status_code == 200
+    assert response.json() == []  # 初始无笔记
+
+def test_get_all_notes_with_data(client: TestClient, mock_user):
+    # 创建多个笔记
+    client.post("/notes/", json={"title": "note1", "content": "content1"})
+    client.post("/notes/", json={"title": "note2", "content": "content2"})
+    response = client.get("/notes/")
+    assert response.status_code == 200
+    notes = response.json()
+    assert len(notes) == 2
+    assert notes[0]["title"] == "note1"
+    assert notes[1]["title"] == "note2"
+
+def test_get_all_notes_with_query_params(client: TestClient, mock_user):
+    # 创建测试数据
+    client.post("/notes/", json={"title": "apple note", "content": "fruit"})
+    client.post("/notes/", json={"title": "banana note", "content": "yellow"})
+    # 测试 search
+    response = client.get("/notes/?search=apple")
+    assert response.status_code == 200
+    notes = response.json()
+    assert len(notes) == 1
+    assert notes[0]["title"] == "apple note"
+    # 测试 limit
+    response = client.get("/notes/?offset=0&limit=1")
+    assert len(response.json()) == 1
+    # assert response.json()[0]["title"] == "apple note"  # 假设按字母排序
+    
+    
+def test_create_note_failure(client: TestClient, mocker, mock_user):
+    mocker.patch("app.service.note_service.NoteService.create_note", side_effect=Exception("DB error"))
+    response = client.post("/notes/", json={"title": "test", "content": "test"})
+    assert response.status_code == 500  # 或自定义错误码
+
+def test_get_note_not_found(client: TestClient, mock_user):
+    response = client.get("/notes/999")
+    assert response.status_code == 404  # 假设服务抛出 404
+
+def test_update_note_not_found(client: TestClient, mock_user):
+    response = client.patch("/notes/999", json={"title": "new"})
+    assert response.status_code == 404
+
+def test_delete_note_not_found(client: TestClient, mock_user):
+    response = client.delete("/notes/999")
+    assert response.status_code == 404
+
+def test_unauthorized_access(client: TestClient):
+    # 不设置认证头
+    client.headers.pop("Authorization", None)
+    response = client.post("/notes/", json={"title": "test", "content": "test"})
+    assert response.status_code == 401
+    assert "Could not validate credentials" in response.json()["detail"]    
+
+
+def test_create_note_long_title(client: TestClient, mock_user):
+    long_title = "a" * 256  # 假设最大长度 255
+    response = client.post("/notes/", json={"title": long_title, "content": "test"})
+    assert response.status_code == 422  # 假设有长度限制
