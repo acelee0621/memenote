@@ -1,6 +1,7 @@
 from datetime import datetime, timezone
 from typing import Optional
 
+from sqlalchemy import UniqueConstraint
 from sqlalchemy import Boolean, ForeignKey, Integer, String, Text, DateTime
 from sqlalchemy.orm import Mapped, mapped_column, relationship, DeclarativeBase
 
@@ -66,6 +67,10 @@ class Note(Base, DateTimeMixin):
     )
     reminders: Mapped[list["Reminder"]] = relationship(
         "Reminder", back_populates="note", lazy="selectin"
+    )
+    
+    __table_args__ = (
+        UniqueConstraint('user_id', 'content', name='_user_content_unique_constraint'),
     )
 
     def __repr__(self):
