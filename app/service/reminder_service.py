@@ -29,7 +29,9 @@ class ReminderService:
             else data.reminder_time.replace(tzinfo=timezone.utc)
         )
         data.reminder_time = reminder_time_utc
+        
         new_reminder = await self.repository.create(data, note_id, current_user)
+        
         if new_reminder.reminder_time.tzinfo is None:
             new_reminder.reminder_time = new_reminder.reminder_time.replace(
                 tzinfo=timezone.utc
