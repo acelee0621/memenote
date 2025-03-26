@@ -3,6 +3,7 @@ import pytest_asyncio
 from typing import AsyncGenerator, Generator
 from fastapi.testclient import TestClient
 from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine, AsyncSession
+from sqlalchemy.pool import NullPool
 
 from app.main import app
 from app.models.models import Base
@@ -16,6 +17,7 @@ TEST_SQLITE_DATABASE_URL = "sqlite+aiosqlite:///:memory:"
 
 test_engine = create_async_engine(
     TEST_SQLITE_DATABASE_URL,
+    # poolclass=NullPool,
     echo=True,
     execution_options={"sqlite_foreign_keys": True},
 )
