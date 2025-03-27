@@ -1,6 +1,6 @@
 # Memenote 项目 📝✨
 
-欢迎体验 **Memenote**！这是一个基于 FastAPI 的笔记工具，专为记录和管理你的灵感与任务而设计。使用 `uv` 管理依赖，支持用户注册、笔记创建、待办事项 (Todo)、提醒 (Reminder)，还有 Celery 驱动的实时提醒功能，通过 SSE（服务器推送事件）送到你的客户端！📩 项目已 Docker 化，支持开发模式和 Traefik 引入 HTTPS 的生产配置。快来试试吧！🚀
+欢迎体验 **Memenote**！这是一个基于 FastAPI 的笔记工具，专为记录和管理你的灵感与任务而设计。使用 `uv` 管理依赖，支持用户注册、笔记创建、待办事项 (Todo)、提醒 (Reminder)，还有 Celery 驱动的实时提醒功能，通过 SSE（服务器推送事件）送到你的客户端！📩 项目使用Alembic配置数据库迁移并且已 Docker 化，支持开发模式和 Traefik 引入 HTTPS 的生产配置。快来试试吧！🚀
 
 ---
 
