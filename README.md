@@ -1,162 +1,160 @@
-# Memenote
+# Memenote 项目 📝✨
 
-![Python](https://img.shields.io/badge/Python-3.13-blue.svg)
-![FastAPI](https://img.shields.io/badge/FastAPI-0.115.0-green.svg)
-![License](https://img.shields.io/badge/License-MIT-yellow.svg)
+欢迎体验 **Memenote**！这是一个基于 FastAPI 的笔记工具，专为记录和管理你的灵感与任务而设计。使用 `uv` 管理依赖，支持用户注册、笔记创建、待办事项 (Todo)、提醒 (Reminder)，还有 Celery 驱动的实时提醒功能，通过 SSE（服务器推送事件）送到你的客户端！📩 项目已 Docker 化，支持开发模式和 Traefik 引入 HTTPS 的生产配置。快来试试吧！🚀
 
-**Memenote** is a lightweight, open-source note-taking application inspired by [Memos](https://github.com/usememos/memos). It allows users to quickly jot down short notes, excerpts, or ideas, and optionally attach todos and reminders to them. Designed for simplicity and efficiency, Memenote provides a clean RESTful API backend built with modern Python technologies.
+---
 
-## Features
+## 项目简介 🌟
 
-- **Notes**: Create, update, and delete short notes with optional titles and content.
-- **Todos**: Add standalone or note-associated todo items with completion tracking.
-- **Reminders**: Set reminders linked to notes or todos, with triggered and acknowledged states.
-- **User Management**: Basic user authentication (to be implemented).
-- **Asynchronous Backend**: Powered by FastAPI and SQLAlchemy 2.0 for efficient async database operations.
-- **Data Isolation**: Each user's data (notes, todos, reminders) is isolated via `user_id`.
+Memenote 是一个轻量但功能强大的笔记管理工具，旨在帮助你：
+- 📋 创建和管理个人笔记 (Note)
+- ✅ 在笔记下添加待办事项 (Todo) 或独立创建 Todo
+- ⏰ 设置提醒 (Reminder)，支持关联笔记或独立存在
+- 🔒 用户注册与认证，确保数据安全
+- 📡 通过 Celery 和 SSE 实现实时提醒推送
+- 🐳 Docker 部署，支持开发与生产环境
 
-Planned future enhancements:
-- Real-time notifications using RabbitMQ and WebSocket.
-- Scheduled reminders with Celery tasks.
-- Frontend interface mimicking Memos' simplicity.
+无论你是想记录灵感、规划任务，还是设置定时提醒，Memenote 都能助你一臂之力！💪
 
-## Tech Stack
+---
 
-- **Backend**: [FastAPI](https://fastapi.tiangolo.com/) (v0.115.0 or latest)
-- **Database ORM**: [SQLAlchemy 2.0](https://docs.sqlalchemy.org/en/20/) with async support (`asyncio`)
-- **Data Validation**: [Pydantic v2](https://docs.pydantic.dev/latest/)
-- **Python**: 3.13 (latest syntax, e.g., `str | None`)
-- **Database**: SQLite (development), PostgreSQL (production-ready)
+## 快速开始 🚀
 
-## Project Structure
+Memenote 使用 `uv` 管理依赖和运行环境。如果你没用过 `uv`，别担心！下面是详细步骤，手把手带你跑起来~ 😎
 
+### 1. 前置条件 ⚙️
+- **Python 版本**: 3.8+  
+- **安装 uv**:  
+  在终端运行：
+  ```bash
+  pip install uv
+  ```
+  或参考 [uv 官方文档](https://github.com/astral-sh/uv)。
+
+### 2. 克隆项目 📥
+获取代码到本地：
+```bash
+git clone https://github.com/acelee0621/memenote.git
+cd memenote
+```
+
+### 3. 使用 uv 安装依赖 📦
+依赖都定义在 `pyproject.toml` 中，使用 `uv` 快速安装：
+```bash
+uv sync
+```
+
+### 4. 配置环境变量 🌍
+复制 `.env.example` 到 `.env`，并根据需要修改：
+```bash
+cp .env.example .env
+```
+- `JWT_SECRET`: 用于用户认证的密钥
+- `SQLITE_DB_PATH`: 数据库路径（默认 `data/memenote.sqlite3`）
+- `BROKER_HOST` 和 `REDIS_HOST`: Celery 的消息队列和结果存储地址
+
+### 5. 运行数据库迁移 🗄️
+初始化数据库表结构：
+```bash
+uv run alembic upgrade head
+```
+
+### 6. 启动 FastAPI 服务 ▶️
+运行主程序：
+```bash
+uv run uvicorn app.main:app --host 0.0.0.0 --port 8000
+```
+访问 `http://localhost:8000/docs` 查看 API 文档！📖
+
+### 7. 启动 Celery Worker 🕒
+提醒功能依赖 Celery，另开一个终端运行：
+```bash
+uv run celery -A app.core.celery_app worker --loglevel=info --pool=threads -Q celery,reminder_queue --autoscale=4,2
+```
+
+---
+
+## Docker 部署 🐳
+
+想用 Docker 跑起来？我们提供了两种配置：
+
+### 开发模式 🛠️
+```bash
+docker compose -f compose.dev.yaml up -d
+```
+- 包含 FastAPI、Celery Worker 和 Redis，适合本地开发。
+
+### 生产模式 + HTTPS 🔐
+使用 Traefik 引入 HTTPS：
+```bash
+docker compose -f compose.traefik.yaml up -d
+```
+- 需要在 `traefik/certs/` 下准备 `cert.pem` 和 `key.pem`。
+- 默认监听 `443` 端口，确保证书配置正确。
+
+---
+
+## 项目结构 🗂️
+快速了解代码布局：
 ```
 memenote/
-├── main.py          # FastAPI application entry point
-├── models.py        # SQLAlchemy database models
-├── schemas.py       # Pydantic schemas for request/response validation
-├── README.md        # Project documentation (this file)
-└── requirements.txt # Dependencies
+├── app/                # 主应用目录
+│   ├── core/           # 核心配置（数据库、Celery、认证等）
+│   ├── models/         # 数据模型（User、Note、Todo、Reminder）
+│   ├── repository/     # 数据操作层
+│   ├── routes/         # API 路由（认证、笔记、提醒等）
+│   ├── schemas/        # 数据校验 schema
+│   ├── service/        # 业务逻辑层
+│   ├── tasks/          # Celery 任务
+│   └── main.py         # FastAPI 入口
+├── alembic/            # 数据库迁移
+├── tests/              # 测试用例
+├── traefik/            # Traefik 配置（生产环境）
+├── Dockerfile          # Docker 镜像定义
+├── pyproject.toml      # uv 依赖管理文件
+└── README.md           # 你正在看的文档！😊
 ```
 
-## Installation
+---
 
-### Prerequisites
-- Python 3.13+
-- pip (Python package manager)
+## 功能亮点 🌈
+- **用户管理** 👤: 注册、登录，JWT 认证保护你的数据。
+- **笔记系统** 📝: 创建、编辑、删除笔记，每个笔记可关联 Todo 和 Reminder。
+- **待办事项** ✅: 支持独立或归属笔记的 Todo，标记完成状态。
+- **提醒功能** ⏰: 设置提醒时间，Celery 定时任务通过 SSE 实时推送。
+- **实时通知** 📡: 使用 Server-Sent Events (SSE) 接收提醒。
+- **Docker 支持** 🐳: 一键部署，开发和生产环境全搞定！
 
-### Steps
-1. **Clone the Repository**
-   ```bash
-   git clone https://github.com/acelee0621/memenote.git
-   cd memenote
-   ```
+---
 
-2. **Set Up a Virtual Environment**
-   ```bash
-   python -m venv venv
-   source venv/bin/activate  # On Windows: venv\Scripts\activate
-   ```
+## 注意事项 ⚠️
+- **数据库**: 默认使用 SQLite，生产环境建议换成 PostgreSQL。
+- **Celery**: 确保 Redis 和 RabbitMQ（或替代 broker）运行正常。
+- **HTTPS**: 生产环境需配置 Traefik 和证书。
+- **问题反馈**: 遇到问题？提个 issue 吧，我会尽快回复！✨
 
-3. **Install Dependencies**
-   ```bash
-   pip install -r requirements.txt
-   ```
+---
 
-4. **Run the Application**
-   ```bash
-   uvicorn main:app --reload
-   ```
-   The API will be available at `http://127.0.0.1:8000`. Open `http://127.0.0.1:8000/docs` for the interactive Swagger UI.
+## 贡献代码 🤝
+喜欢 Memenote 想加点料？欢迎参与：
+1. Fork 项目
+2. 创建分支 (`git checkout -b feature/cool-idea`)
+3. 提交代码 (`git commit -m "✨ 添加超赞功能"`)
+4. Push 到仓库 (`git push origin feature/cool-idea`)
+5. 创建 Pull Request
 
-## API Endpoints
+---
 
-### Notes
-- `POST /notes`: Create a new note.
-- `GET /notes`: List all notes with associated todos and reminders.
-- `GET /notes/{note_id}`: Retrieve a single note with its todos and reminders.
-- `PATCH /notes/{note_id}`: Update a note.
-- `DELETE /notes/{note_id}`: Delete a note.
+## 联系我 📬
+有问题或建议？欢迎在 GitHub 上提 issue。  
+让我们一起让 Memenote 更强大！🌟
 
-### Todos
-- `POST /todos`: Create a todo (standalone or linked to a note via `note_id`).
-- `GET /todos`: List all todos.
-- `GET /todos?note_id={note_id}`: Filter todos by note.
-- `GET /todos/{todo_id}`: Retrieve a single todo.
-- `PATCH /todos/{todo_id}`: Update a todo (e.g., mark as completed).
-- `DELETE /todos/{todo_id}`: Delete a todo.
+---
 
-### Reminders
-- `POST /reminders`: Create a reminder (standalone or linked to a note/todo via `note_id`/`todo_id`).
-- `GET /reminders`: List all reminders.
-- `GET /reminders?note_id={note_id}`: Filter reminders by note.
-- `GET /reminders?todo_id={todo_id}`: Filter reminders by todo.
-- `GET /reminders/{reminder_id}`: Retrieve a single reminder.
-- `PATCH /reminders/{reminder_id}`: Update a reminder (e.g., mark as acknowledged).
-- `DELETE /reminders/{reminder_id}`: Delete a reminder.
+## 致谢 🙏
+感谢 FastAPI、Celery、uv 和所有开源社区的支持！也谢谢你使用 Memenote！💖
 
-## Database Models
-
-### User
-- `id`: Integer (Primary Key)
-- `username`: String (Unique, Required)
-- `password_hash`: String (Required)
-- `email`: String | None
-- `created_at`: DateTime
-- Relationships: `notes`, `todos`, `reminders`
-
-### Note
-- `id`: Integer (Primary Key)
-- `user_id`: Integer (Foreign Key)
-- `title`: String | None
-- `content`: String | None
-- `created_at`: DateTime
-- `updated_at`: DateTime
-- Relationships: `user`, `todos`, `reminders`
-
-### Todo
-- `id`: Integer (Primary Key)
-- `user_id`: Integer (Foreign Key)
-- `note_id`: Integer | None (Foreign Key)
-- `content`: String (Required)
-- `is_completed`: Boolean (Default: False)
-- `created_at`: DateTime
-- `updated_at`: DateTime
-- Relationships: `user`, `note`
-
-### Reminder
-- `id`: Integer (Primary Key)
-- `user_id`: Integer (Foreign Key)
-- `note_id`: Integer | None (Foreign Key)
-- `todo_id`: Integer | None (Foreign Key)
-- `reminder_time`: DateTime (Required)
-- `message`: String | None
-- `is_triggered`: Boolean (Default: False)
-- `is_acknowledged`: Boolean (Default: False)
-- `created_at`: DateTime
-- Relationships: `user`, `note`, `todo`
-
-## Development Status
-
-- [x] Database models and Pydantic schemas defined.
-- [x] User authentication (JWT).
-- [x] Basic CRUD API endpoints implemented.
-- [ ] Reminder scheduling with Celery.
-- [ ] Notification system with RabbitMQ and WebSocket.
-- [ ] Frontend development.
-
-## Contributing
-
-Contributions are welcome! Please follow these steps:
-1. Fork the repository.
-2. Create a new branch (`git checkout -b feature/your-feature`).
-3. Commit your changes (`git commit -m "Add your feature"`).
-4. Push to the branch (`git push origin feature/your-feature`).
-5. Open a Pull Request.
-
-## License
-
-This project is licensed under the [MIT License](LICENSE).
+---
 
 ## Acknowledgments
 
