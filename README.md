@@ -80,7 +80,7 @@ uv run celery -A app.core.celery_app worker --loglevel=info --pool=threads -Q ce
 
 ### 开发模式 🛠️
 ```bash
-docker compose -f compose.dev.yaml up -d
+docker compose -f compose.yaml -f compose.dev.yaml up -d --watch
 ```
 - 包含 FastAPI、Celery Worker 和 Redis，适合本地开发。
 
