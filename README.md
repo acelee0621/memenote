@@ -50,8 +50,14 @@ uv sync
 cp .env.example .env
 ```
 - `JWT_SECRET`: 用于用户认证的密钥
+- `JWT_ALGORITHM`:JWT加密算法（`HS256`）
+- `BROKER_HOST` 和 `REDIS_HOST`: Celery 的消息队列和结果存储地址(可选，默认`localhost`)
 - `SQLITE_DB_PATH`: 数据库路径（默认 `data/memenote.sqlite3`）
-- `BROKER_HOST` 和 `REDIS_HOST`: Celery 的消息队列和结果存储地址
+- `POSTGRES_HOST`:数据库主机（可选，默认`localhost`）
+- `POSTGRES_PORT`:数据库端口（可选，默认`5432`）
+- `POSTGRES_DB`:数据库（可选，默认`memenote`）
+- `POSTGRES_USER`:数据库用户名（可选，默认`postgres`）
+- `POSTGRES_PASSWORD`:数据库密码（可选，默认`postgres`）
 
 ### 5. 运行数据库迁移 🗄️
 初始化数据库表结构：
@@ -76,13 +82,18 @@ uv run celery -A app.core.celery_app worker --loglevel=info --pool=threads -Q ce
 
 ## Docker 部署 🐳
 
-想用 Docker 跑起来？我们提供了两种配置：
+想用 Docker 跑起来？我们提供了三种配置：
 
 ### 开发模式 🛠️
 ```bash
 docker compose -f compose.yaml -f compose.dev.yaml up -d --watch
 ```
 - 包含 FastAPI、Celery Worker 和 Redis，适合本地开发。
+
+### 生产模式（无https）
+```bash
+docker compose up -d
+```
 
 ### 生产模式 + HTTPS 🔐
 使用 Traefik 引入 HTTPS：
@@ -128,7 +139,7 @@ memenote/
 ---
 
 ## 注意事项 ⚠️
-- **数据库**: 默认使用 SQLite，生产环境建议换成 PostgreSQL。
+- **数据库**: 默认使用 PostgreSQL。
 - **Celery**: 确保 Redis 和 RabbitMQ（或替代 broker）运行正常。
 - **HTTPS**: 生产环境需配置 Traefik 和证书。
 - **问题反馈**: 遇到问题？提个 issue 吧，我会尽快回复！✨

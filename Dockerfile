@@ -33,10 +33,10 @@ USER appuser
 
 # 设置环境变量，使用 `.venv`
 ENV PATH="/app/.venv/bin:$PATH"
-ENV SQLITE_DB_PATH="/app/data/memenote.sqlite3"
+# ENV SQLITE_DB_PATH="/app/data/memenote.sqlite3"
 
 # 创建数据库文件夹并保证权限属于 appuser
-RUN mkdir -p /app/data && chown appuser:appuser /app/data
+# RUN mkdir -p /app/data && chown appuser:appuser /app/data
 
 # 确保数据库目录存在（生产环境使用）
 # RUN mkdir -p /var/lib/app/data

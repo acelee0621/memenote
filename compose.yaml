@@ -99,6 +99,8 @@ services:
 volumes:
   data:
     driver: local
+  postgresql_data:
+    driver: local
   rabbitmq_data:
     driver: local
   redis_data:
