@@ -52,7 +52,6 @@ cp .env.example .env
 - `JWT_SECRET`: 用于用户认证的密钥
 - `JWT_ALGORITHM`:JWT加密算法（`HS256`）
 - `BROKER_HOST` 和 `REDIS_HOST`: Celery 的消息队列和结果存储地址(可选，默认`localhost`)
-- `SQLITE_DB_PATH`: 数据库路径（默认 `data/memenote.sqlite3`）
 - `POSTGRES_HOST`:数据库主机（可选，默认`localhost`）
 - `POSTGRES_PORT`:数据库端口（可选，默认`5432`）
 - `POSTGRES_DB`:数据库（可选，默认`memenote`）
