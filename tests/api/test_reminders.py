@@ -40,7 +40,7 @@ def test_create_reminder(
     # 根据状态码验证响应
     if expected_status == 201:
         reminder = ReminderResponse.model_validate(response.json())
-        assert response.json()["reminder_time"] == reminder_time
+        assert response.json()["reminder_time"] +"Z" == reminder_time
         assert reminder.message == message
         assert reminder.user_id == mock_user.id
         assert reminder.id is not None
