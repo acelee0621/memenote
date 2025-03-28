@@ -1,8 +1,8 @@
 """Initial migration
 
-Revision ID: 162bed11eac8
+Revision ID: 3098dcfbb218
 Revises: 
-Create Date: 2025-03-01 00:15:42.908754
+Create Date: 2025-03-28 15:06:16.726814
 
 """
 from typing import Sequence, Union
@@ -12,7 +12,7 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision: str = '162bed11eac8'
+revision: str = '3098dcfbb218'
 down_revision: Union[str, None] = None
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
@@ -26,8 +26,8 @@ def upgrade() -> None:
     sa.Column('email', sa.String(length=255), nullable=True),
     sa.Column('full_name', sa.String(length=100), nullable=True),
     sa.Column('password_hash', sa.String(length=512), nullable=False),
-    sa.Column('created_at', sa.DateTime(), nullable=False),
-    sa.Column('updated_at', sa.DateTime(), nullable=False),
+    sa.Column('created_at', sa.DateTime(timezone=True), nullable=False),
+    sa.Column('updated_at', sa.DateTime(timezone=True), nullable=False),
     sa.PrimaryKeyConstraint('id')
     )
     op.create_index(op.f('ix_users_created_at'), 'users', ['created_at'], unique=False)
@@ -37,22 +37,23 @@ def upgrade() -> None:
     sa.Column('user_id', sa.Integer(), nullable=False),
     sa.Column('title', sa.String(length=100), nullable=False),
     sa.Column('content', sa.Text(), nullable=False),
-    sa.Column('created_at', sa.DateTime(), nullable=False),
-    sa.Column('updated_at', sa.DateTime(), nullable=False),
+    sa.Column('created_at', sa.DateTime(timezone=True), nullable=False),
+    sa.Column('updated_at', sa.DateTime(timezone=True), nullable=False),
     sa.ForeignKeyConstraint(['user_id'], ['users.id'], ondelete='CASCADE'),
-    sa.PrimaryKeyConstraint('id')
+    sa.PrimaryKeyConstraint('id'),
+    sa.UniqueConstraint('user_id', 'content', name='_user_content_unique_constraint')
     )
     op.create_index(op.f('ix_notes_created_at'), 'notes', ['created_at'], unique=False)
     op.create_table('reminders',
     sa.Column('id', sa.Integer(), autoincrement=True, nullable=False),
     sa.Column('user_id', sa.Integer(), nullable=False),
     sa.Column('note_id', sa.Integer(), nullable=True),
-    sa.Column('reminder_time', sa.DateTime(), nullable=False),
+    sa.Column('reminder_time', sa.DateTime(timezone=True), nullable=False),
     sa.Column('message', sa.String(length=255), nullable=False),
     sa.Column('is_triggered', sa.Boolean(), nullable=False),
     sa.Column('is_acknowledged', sa.Boolean(), nullable=False),
-    sa.Column('created_at', sa.DateTime(), nullable=False),
-    sa.Column('updated_at', sa.DateTime(), nullable=False),
+    sa.Column('created_at', sa.DateTime(timezone=True), nullable=False),
+    sa.Column('updated_at', sa.DateTime(timezone=True), nullable=False),
     sa.ForeignKeyConstraint(['note_id'], ['notes.id'], ondelete='SET NULL'),
     sa.ForeignKeyConstraint(['user_id'], ['users.id'], ondelete='CASCADE'),
     sa.PrimaryKeyConstraint('id')
@@ -64,8 +65,8 @@ def upgrade() -> None:
     sa.Column('note_id', sa.Integer(), nullable=True),
     sa.Column('content', sa.String(length=255), nullable=False),
     sa.Column('is_completed', sa.Boolean(), nullable=False),
-    sa.Column('created_at', sa.DateTime(), nullable=False),
-    sa.Column('updated_at', sa.DateTime(), nullable=False),
+    sa.Column('created_at', sa.DateTime(timezone=True), nullable=False),
+    sa.Column('updated_at', sa.DateTime(timezone=True), nullable=False),
     sa.ForeignKeyConstraint(['note_id'], ['notes.id'], ondelete='SET NULL'),
     sa.ForeignKeyConstraint(['user_id'], ['users.id'], ondelete='CASCADE'),
     sa.PrimaryKeyConstraint('id')

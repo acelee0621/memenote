@@ -17,11 +17,17 @@ services:
       redis:
         condition: service_healthy
       rabbitmq:
+        condition: service_healthy
+      postgresql:
         condition: service_healthy    
     environment:
       - BROKER_HOST=rabbitmq:5672      
       - REDIS_HOST=redis:6379
-      - SQLITE_DB_PATH=/app/data/memenote.sqlite3    
+      - POSTGRES_HOST=postgresql
+      - POSTGRES_PORT=5432
+      - POSTGRES_DB=memenote
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres    
 
   celery:
     image: memenote-app:latest
@@ -32,12 +38,31 @@ services:
         condition: service_healthy
       rabbitmq:
         condition: service_healthy
+      postgresql:
+        condition: service_healthy
       app:
         condition: service_healthy
         restart: true    
     environment:
       - BROKER_HOST=rabbitmq:5672      
-      - REDIS_HOST=redis:6379    
+      - REDIS_HOST=redis:6379
+
+  postgresql:
+    image: bitnami/postgresql:latest
+    ports:
+      - "5432:5432"
+    environment:
+      - POSTGRESQL_USERNAME=postgres
+      - POSTGRESQL_PASSWORD=postgres
+      - POSTGRESQL_DATABASE=memenote
+    volumes:
+      - postgresql_data:/bitnami/postgresql
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s    
 
   rabbitmq:
     image: bitnami/rabbitmq:latest

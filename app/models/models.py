@@ -13,10 +13,10 @@ class Base(DeclarativeBase):
 
 class DateTimeMixin:
     created_at: Mapped[datetime] = mapped_column(
-        DateTime, index=True, default=lambda: datetime.now(timezone.utc)
+        DateTime(timezone=True), index=True, default=lambda: datetime.now(timezone.utc)
     )
     updated_at: Mapped[datetime] = mapped_column(
-        DateTime,
+        DateTime(timezone=True),
         default=lambda: datetime.now(timezone.utc),
         onupdate=lambda: datetime.now(timezone.utc),
     )
