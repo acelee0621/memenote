@@ -1,7 +1,8 @@
-from dateutil.parser import parse
+import asyncio
+
 import pytest_asyncio
-from typing import AsyncGenerator, Generator
-from fastapi.testclient import TestClient
+from httpx import ASGITransport, AsyncClient
+from typing import AsyncGenerator
 from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine, AsyncSession
 from sqlalchemy.pool import NullPool
 
@@ -9,17 +10,19 @@ from app.main import app
 from app.models.models import Base
 from app.core.database import get_db
 from app.core.security import get_current_user
+from app.models.models import User
 from app.schemas.schemas import UserResponse
 
 
-TEST_SQLITE_DATABASE_URL = "sqlite+aiosqlite:///:memory:"
+TEST_DATABASE_URL = (
+    "postgresql+asyncpg://postgres:postgres@localhost:5432/memenote_test"
+)
 
 
 test_engine = create_async_engine(
-    TEST_SQLITE_DATABASE_URL,
-    # poolclass=NullPool,
-    echo=True,
-    execution_options={"sqlite_foreign_keys": True},
+    TEST_DATABASE_URL,
+    poolclass=NullPool,
+    # echo=True
 )
 
 
@@ -29,6 +32,24 @@ TestingSessionLocal = async_sessionmaker(
 
 
 @pytest_asyncio.fixture
+async def db_session() -> AsyncGenerator[AsyncSession, None]:
+    async with TestingSessionLocal() as session:
+        yield session
+
+
+# https://pypi.org/project/pytest-async-sqlalchemy/
+# or poolclass = NullPool when create_async_engine
+# @pytest_asyncio.fixture(scope="session", autouse=True)
+# def event_loop():
+#     """
+#     Creates an instance of the default event loop for the test session.
+#     """
+#     loop = asyncio.new_event_loop()
+#     yield loop
+#     loop.close()
+
+
+@pytest_asyncio.fixture(scope="session", autouse=True)
 async def setup_db():
     async with test_engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
@@ -38,47 +59,55 @@ async def setup_db():
 
 
 @pytest_asyncio.fixture
-async def db_session(setup_db) -> AsyncGenerator[AsyncSession, None]:
-    async with TestingSessionLocal() as session:
-        yield session
-
-
-@pytest_asyncio.fixture
 async def override_get_db(db_session: AsyncSession):
     async def _override_get_db():
         yield db_session
-
     return _override_get_db
 
 
-# 模拟一个认证用户
+# 模拟一个用于测试认证的用户
 @pytest_asyncio.fixture
-def mock_user():
-    return UserResponse(
-        id=777,
-        username="testuser",
-        full_name="Test User",
-        email="test@example.com",
-        created_at=parse("2023-10-01T00:00:00Z"),
-        updated_at=parse("2023-10-01T00:00:00Z"),
-    )
+async def test_user(db_session: AsyncSession):
+    from app.core.security import get_password_hash
+    from .helper import the_first_user
+
+    the_first_user["password_hash"] = get_password_hash(the_first_user.pop("password"))
+
+    user = User(**the_first_user)
+    db_session.add(user)
+    await db_session.commit()
+    await db_session.refresh(user)
+    return UserResponse.model_validate(user)
+    # return user
 
 
 # 测试客户端 fixture，包含依赖覆盖和清理
 @pytest_asyncio.fixture
-def client(override_get_db, mock_user) -> Generator[TestClient, None, None]:
+async def client(override_get_db) -> AsyncGenerator[AsyncClient, None]:
     # 设置依赖项覆盖
     app.dependency_overrides[get_db] = override_get_db
-    app.dependency_overrides[get_current_user] = lambda: mock_user
-    # 创建 TestClient
-    test_client = TestClient(app)
-    # 提供给测试使用
-    yield test_client
+
+    async with AsyncClient(
+        transport=ASGITransport(app=app), base_url="http://test"
+    ) as ac:
+        yield ac
     # 清理依赖项覆盖
     app.dependency_overrides.clear()
 
 
+@pytest_asyncio.fixture
+async def auth_client(
+    client: AsyncClient, test_user: UserResponse
+) -> AsyncGenerator[AsyncClient, None]:
+    app.dependency_overrides[get_current_user] = lambda: test_user
+    yield client
+    app.dependency_overrides.pop(get_current_user, None)
+
+
 # 不带认证的默认 client
 @pytest_asyncio.fixture
-def non_auth_client():
-    return TestClient(app)
+async def non_auth_client():
+    async with AsyncClient(
+        transport=ASGITransport(app=app), base_url="http://test"
+    ) as ac:
+        yield ac
