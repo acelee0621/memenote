@@ -4,10 +4,6 @@ from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker, Asyn
 
 from app.models.models import Base, User, Note, Todo, Reminder
 
-# # 从环境变量获取数据库路径，默认为 data/memenote.sqlite3
-# database_path = os.getenv("SQLITE_DB_PATH", "data/memenote.sqlite3")
-# SQLITE_DATABASE_URL = f"sqlite+aiosqlite:///{database_path}"
-
 
 # 从环境变量获取 PostgreSQL 连接信息
 POSTGRES_HOST = os.getenv("POSTGRES_HOST", "localhost")
@@ -17,11 +13,6 @@ POSTGRES_USER = os.getenv("POSTGRES_USER", "postgres")
 POSTGRES_PASSWORD = os.getenv("POSTGRES_PASSWORD", "postgres")
 # 构建数据库 URL
 POSTGRES_DATABASE_URL = f"postgresql+asyncpg://{POSTGRES_USER}:{POSTGRES_PASSWORD}@{POSTGRES_HOST}:{POSTGRES_PORT}/{POSTGRES_DB}"
-
-
-# engine = create_async_engine(
-#     SQLITE_DATABASE_URL, echo=True, execution_options={"sqlite_foreign_keys": True}
-# )
 
 
 engine = create_async_engine(
