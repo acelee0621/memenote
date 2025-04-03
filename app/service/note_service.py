@@ -29,7 +29,7 @@ class NoteService:
         Returns:
             NoteResponse: The response model containing the note details.
         """
-        note = await self.repository.get_by_id(note_id, current_user)
+        note = await self.repository.get_by_id(note_id, current_user)        
         return NoteResponse.model_validate(note)
 
     async def get_notes(
@@ -54,6 +54,8 @@ class NoteService:
             offset=offset,
             current_user=current_user,
         )
+        for note in notes:
+            print(f"Note {note.id} attachments: {note.attachments}")
         return [NoteResponse.model_validate(note) for note in notes]
 
     async def update_note(

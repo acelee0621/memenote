@@ -1,10 +1,14 @@
-from fastapi.testclient import TestClient# from tests.conftest import client
+import pytest
+from httpx import AsyncClient
 from app.schemas.schemas import UserResponse
 
 
-def test_users_me(client: TestClient, mock_user):    
-    response = client.get("/users/me")
+@pytest.mark.filterwarnings("ignore:Accessing argon2.__version__:DeprecationWarning")
+@pytest.mark.asyncio
+async def test_users_me(authorized_client: AsyncClient, test_user: UserResponse):
+    response = await authorized_client.get("/users/me")
     assert response.status_code == 200
     user_response = UserResponse.model_validate(response.json())
-
-    assert user_response == mock_user
+    
+    assert user_response == test_user
+    assert "password_hash" not in response.json()

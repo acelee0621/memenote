@@ -1,13 +1,11 @@
-import os
-
 from celery import Celery
+from app.core.config import settings
 
 
-broker_host = os.getenv("BROKER_HOST", "localhost:5672")
-CELERY_BROKER_URL = f"amqp://user:bitnami@{broker_host}//"
+CELERY_BROKER_URL = f"amqp://{settings.RABBITMQ_USER}:{settings.RABBITMQ_PASSWORD}@{settings.RABBITMQ_HOST}//"
 
-redis_host = os.getenv("REDIS_HOST", "localhost:6379")
-CELERY_RESULT_BACKEND = f"redis://{redis_host}/2"
+
+CELERY_RESULT_BACKEND = f"redis://{settings.REDIS_HOST}/2"
 
 
 celery_app = Celery(
