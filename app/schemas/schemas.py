@@ -52,6 +52,7 @@ class NoteResponse(BaseSchema):
     updated_at: datetime
     todos: list["TodoResponse"] | None = None
     reminders: list["ReminderResponse"] | None = None
+    attachments: list["AttachmentResponse"] | None = None
 
 # 待办事项相关模型
 class TodoCreate(BaseModel):
