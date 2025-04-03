@@ -136,7 +136,7 @@ async def upload_note_attachment(
 ):
     
     try:
-        # 1. 验证 Note 是否存在且属于当前用户 (NoteService 应该有这个方法)
+        # 1. 验证 Note 是否存在且属于当前用户
         note = await note_service.get_note(note_id=note_id, current_user=current_user)
         if not note:             
              raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Note not found or insufficient permissions")
