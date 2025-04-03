@@ -44,6 +44,10 @@ class User(Base, DateTimeMixin):
     reminders: Mapped[list["Reminder"]] = relationship(
         "Reminder", back_populates="user", cascade="all, delete-orphan"
     )
+    # 新增：与 Attachment 的一对多关系 (直接关联，方便查询用户的所有附件)
+    attachments: Mapped[list["Attachment"]] = relationship(
+        "Attachment", back_populates="user", cascade="all, delete-orphan"
+    )
 
     def __repr__(self):
         return f"<User(id={self.id}, username={self.username})>"
@@ -68,9 +72,16 @@ class Note(Base, DateTimeMixin):
     reminders: Mapped[list["Reminder"]] = relationship(
         "Reminder", back_populates="note", lazy="selectin"
     )
-    
+    # 新增：与 Attachment 的一对多关系
+    attachments: Mapped[list["Attachment"]] = relationship(
+        "Attachment",
+        back_populates="note",
+        cascade="all, delete-orphan",
+        lazy="selectin",
+    )
+
     __table_args__ = (
-        UniqueConstraint('user_id', 'content', name='_user_content_unique_constraint'),
+        UniqueConstraint("user_id", "content", name="_user_content_unique_constraint"),
     )
 
     def __repr__(self):
@@ -110,7 +121,9 @@ class Reminder(Base, DateTimeMixin):
     note_id: Mapped[Optional[int]] = mapped_column(
         ForeignKey("notes.id", ondelete="SET NULL"), nullable=True
     )
-    reminder_time: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    reminder_time: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False
+    )
     message: Mapped[str] = mapped_column(String(255), nullable=False)
     is_triggered: Mapped[bool] = mapped_column(Boolean, default=False)
     is_acknowledged: Mapped[bool] = mapped_column(Boolean, default=False)
@@ -121,3 +134,53 @@ class Reminder(Base, DateTimeMixin):
 
     def __repr__(self):
         return f"<Reminder(id={self.id}, message={self.message})>"
+
+
+class Attachment(Base, DateTimeMixin):
+    __tablename__ = "attachments"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    # 外键关联到 Note 表
+    note_id: Mapped[int] = mapped_column(
+        ForeignKey(
+            "notes.id", ondelete="CASCADE"
+        ),  # 如果笔记删除，数据库层面也删除此附件记录
+        nullable=False,
+        index=True,
+    )
+    # 外键直接关联到 User 表 (方便权限检查和查询)
+    user_id: Mapped[int] = mapped_column(
+        ForeignKey("users.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+    # MinIO 相关信息
+    object_name: Mapped[str] = mapped_column(
+        String(512),  # 存储在 MinIO 中的对象 key/路径，长度可以给足一些
+        nullable=False,
+        unique=True,  # 确保每个 MinIO 对象只被引用一次
+        index=True,  # 频繁用于查找，需要索引
+    )
+    bucket_name: Mapped[str] = mapped_column(
+        String(100),  # 存储附件的 Bucket 名称
+        nullable=False,
+    )
+    # 文件元数据
+    original_filename: Mapped[str] = mapped_column(
+        String(255),  # 用户上传时的原始文件名
+        nullable=False,
+    )
+    content_type: Mapped[str] = mapped_column(
+        String(100),  # 文件的 MIME 类型
+        nullable=False,
+    )
+    size: Mapped[int] = mapped_column(
+        Integer,  # 使用 BigInteger 以支持大于 2GB 的文件
+        nullable=False,
+    )
+    # 关系映射 (反向)
+    note: Mapped["Note"] = relationship("Note", back_populates="attachments")
+    user: Mapped["User"] = relationship("User", back_populates="attachments")
+
+    def __repr__(self):
+        return f"<Attachment(id={self.id}, filename='{self.original_filename}', object_name='{self.object_name}')>"

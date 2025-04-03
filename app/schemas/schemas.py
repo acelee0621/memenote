@@ -1,5 +1,8 @@
 from pydantic import BaseModel, ConfigDict, EmailStr, Field
 from datetime import datetime
+from sqlalchemy import inspect
+
+from app.models.models import Attachment
 
 # 配置基类，启用 ORM 模式
 class BaseSchema(BaseModel):
@@ -96,3 +99,38 @@ class Token(BaseModel):
 class LoginData(BaseModel):
     username: str
     password: str
+    
+    
+class AttachmentBase(BaseModel):    
+    note_id: int = Field(..., description="关联的笔记ID")    
+    object_name: str = Field(..., max_length=512, description="MinIO对象存储路径")
+    bucket_name: str = Field(..., max_length=100, description="MinIO存储桶名称")
+    original_filename: str = Field(..., max_length=255, description="原始文件名")
+    content_type: str = Field(..., max_length=100, description="文件MIME类型")
+    size: int = Field(..., description="文件大小(字节)")
+
+# 创建附件时的请求模型
+class AttachmentCreate(AttachmentBase):
+    pass
+
+# 更新附件时的请求模型（所有字段可选）
+class AttachmentUpdate(BaseModel):
+    note_id: int | None = Field(None, description="关联的笔记ID")
+    original_filename: str | None = Field(None, max_length=255, description="原始文件名")
+    content_type: str | None = Field(None, max_length=100, description="文件MIME类型")
+
+# 附件响应模型
+class AttachmentResponse(AttachmentBase):
+    id: int = Field(..., description="附件ID")
+    user_id: int = Field(..., description="所属用户ID")
+    created_at: datetime = Field(..., description="创建时间")
+    updated_at: datetime = Field(..., description="更新时间")
+    url: str = Field(..., description="附件下载URL（API端点）")
+    
+    @classmethod
+    def model_validate(cls, db_attachment, base_url: str = "http://127.0.0.1:8000"):
+        # 将 SQLAlchemy 对象转换为字典
+        insp = inspect(db_attachment)
+        attachment_dict = {c.key: getattr(db_attachment, c.key) for c in insp.mapper.column_attrs}
+        attachment_dict["url"] = f"{base_url}/notes/{db_attachment.note_id}/attachments/{db_attachment.id}/download"
+        return cls(**attachment_dict)

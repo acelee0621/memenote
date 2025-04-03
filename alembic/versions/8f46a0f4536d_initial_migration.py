@@ -1,8 +1,8 @@
 """Initial migration
 
-Revision ID: 3098dcfbb218
+Revision ID: 8f46a0f4536d
 Revises: 
-Create Date: 2025-03-28 15:06:16.726814
+Create Date: 2025-04-03 15:42:37.021299
 
 """
 from typing import Sequence, Union
@@ -12,7 +12,7 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision: str = '3098dcfbb218'
+revision: str = '8f46a0f4536d'
 down_revision: Union[str, None] = None
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
@@ -44,6 +44,25 @@ def upgrade() -> None:
     sa.UniqueConstraint('user_id', 'content', name='_user_content_unique_constraint')
     )
     op.create_index(op.f('ix_notes_created_at'), 'notes', ['created_at'], unique=False)
+    op.create_table('attachments',
+    sa.Column('id', sa.Integer(), autoincrement=True, nullable=False),
+    sa.Column('note_id', sa.Integer(), nullable=False),
+    sa.Column('user_id', sa.Integer(), nullable=False),
+    sa.Column('object_name', sa.String(length=512), nullable=False),
+    sa.Column('bucket_name', sa.String(length=100), nullable=False),
+    sa.Column('original_filename', sa.String(length=255), nullable=False),
+    sa.Column('content_type', sa.String(length=100), nullable=False),
+    sa.Column('size', sa.Integer(), nullable=False),
+    sa.Column('created_at', sa.DateTime(timezone=True), nullable=False),
+    sa.Column('updated_at', sa.DateTime(timezone=True), nullable=False),
+    sa.ForeignKeyConstraint(['note_id'], ['notes.id'], ondelete='CASCADE'),
+    sa.ForeignKeyConstraint(['user_id'], ['users.id'], ondelete='CASCADE'),
+    sa.PrimaryKeyConstraint('id')
+    )
+    op.create_index(op.f('ix_attachments_created_at'), 'attachments', ['created_at'], unique=False)
+    op.create_index(op.f('ix_attachments_note_id'), 'attachments', ['note_id'], unique=False)
+    op.create_index(op.f('ix_attachments_object_name'), 'attachments', ['object_name'], unique=True)
+    op.create_index(op.f('ix_attachments_user_id'), 'attachments', ['user_id'], unique=False)
     op.create_table('reminders',
     sa.Column('id', sa.Integer(), autoincrement=True, nullable=False),
     sa.Column('user_id', sa.Integer(), nullable=False),
@@ -81,6 +100,11 @@ def downgrade() -> None:
     op.drop_table('todos')
     op.drop_index(op.f('ix_reminders_created_at'), table_name='reminders')
     op.drop_table('reminders')
+    op.drop_index(op.f('ix_attachments_user_id'), table_name='attachments')
+    op.drop_index(op.f('ix_attachments_object_name'), table_name='attachments')
+    op.drop_index(op.f('ix_attachments_note_id'), table_name='attachments')
+    op.drop_index(op.f('ix_attachments_created_at'), table_name='attachments')
+    op.drop_table('attachments')
     op.drop_index(op.f('ix_notes_created_at'), table_name='notes')
     op.drop_table('notes')
     op.drop_index(op.f('ix_users_username'), table_name='users')
