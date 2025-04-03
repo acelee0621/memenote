@@ -18,7 +18,7 @@ engine = create_async_engine(
     max_overflow=10,  # 允许超出pool_size的连接数
     pool_timeout=30,  # 获取连接的超时时间(秒)
     pool_recycle=3600,  # 连接回收时间(秒)
-    echo=True,  # 是否输出SQL日志，调试时可设为True
+    echo=False,  # 是否输出SQL日志，调试时可设为True
 )
 
 
