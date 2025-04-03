@@ -102,7 +102,7 @@ class LoginData(BaseModel):
     password: str
     
     
-class AttachmentBase(BaseModel):    
+class AttachmentBase(BaseSchema):    
     note_id: int = Field(..., description="关联的笔记ID")    
     object_name: str = Field(..., max_length=512, description="MinIO对象存储路径")
     bucket_name: str = Field(..., max_length=100, description="MinIO存储桶名称")
@@ -126,12 +126,4 @@ class AttachmentResponse(AttachmentBase):
     user_id: int = Field(..., description="所属用户ID")
     created_at: datetime = Field(..., description="创建时间")
     updated_at: datetime = Field(..., description="更新时间")
-    url: str = Field(..., description="附件下载URL（API端点）")
     
-    @classmethod
-    def model_validate(cls, db_attachment, base_url: str = "http://127.0.0.1:8000"):
-        # 将 SQLAlchemy 对象转换为字典
-        insp = inspect(db_attachment)
-        attachment_dict = {c.key: getattr(db_attachment, c.key) for c in insp.mapper.column_attrs}
-        attachment_dict["url"] = f"{base_url}/notes/{db_attachment.note_id}/attachments/{db_attachment.id}/download"
-        return cls(**attachment_dict)

@@ -32,15 +32,15 @@ class AttachmentRepository:
                 f"Attachment with content {data.original_filename} already exists"
             )
 
-    async def get_by_id(self, attachment_id: int, current_user) -> Note:
-        query = (
-            select(Attachment).where(Attachment.id == attachment_id, Attachment.user_id == current_user.id)           
-        )
-        result = await self.session.scalars(query)
-        note = result.one_or_none()
-        if not note:
-            raise NotFoundException(f"Attachment with id {attachment_id} not found")
-        return note
+    # async def get_by_id(self, attachment_id: int, current_user) -> Note:
+    #     query = (
+    #         select(Attachment).where(Attachment.id == attachment_id, Attachment.user_id == current_user.id)           
+    #     )
+    #     result = await self.session.scalars(query)
+    #     note = result.one_or_none()
+    #     if not note:
+    #         raise NotFoundException(f"Attachment with id {attachment_id} not found")
+    #     return note
 
     # async def get_all(
     #     self,
