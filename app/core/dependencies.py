@@ -5,6 +5,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
 from app.models.models import Note
+from app.repository.note_repo import NoteRepository
+from app.service.note_service import NoteService
 from app.core.exceptions import NotFoundException
 
 
@@ -21,3 +23,9 @@ async def get_note_id(
         if note is None:
             raise NotFoundException(f"Note with id {note_id} not found")
     return note_id
+
+
+def get_note_service(session: AsyncSession = Depends(get_db)) -> NoteService:
+    """Dependency for getting NoteService instance."""
+    repository = NoteRepository(session)
+    return NoteService(repository)
