@@ -27,7 +27,10 @@ services:
       - POSTGRES_PORT=5432
       - POSTGRES_DB=memenote
       - POSTGRES_USER=postgres
-      - POSTGRES_PASSWORD=postgres    
+      - POSTGRES_PASSWORD=postgres
+      - MINIO_ENDPOINT=minio:9000
+      - MINIO_ACCESS_KEY=minio
+      - MINIO_SECRET_KEY=miniosecret    
 
   celery:
     image: memenote-app:latest
@@ -93,7 +96,19 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
-      start_period: 20s   
+      start_period: 20s
+
+  minio:
+    image: docker.io/bitnami/minio:latest    
+    ports:
+      - '9000:9000'
+      - '9001:9001'
+    environment:
+      - MINIO_DEFAULT_BUCKETS=memenote
+      - MINIO_ROOT_USER=minio     # 设置自定义访问密钥
+      - MINIO_ROOT_PASSWORD=miniosecret # 设置自定义秘密密钥(至少8字符)
+    volumes:
+      - 'minio_data:/bitnami/minio/data'
 
 
 volumes:
@@ -104,4 +119,6 @@ volumes:
   rabbitmq_data:
     driver: local
   redis_data:
+    driver: local
+  minio_data:
     driver: local
