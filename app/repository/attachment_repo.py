@@ -1,17 +1,19 @@
-from sqlalchemy import select, desc, asc, or_
+from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.exceptions import AlreadyExistsException, NotFoundException
 from app.models.models import Attachment
-from app.schemas.schemas import AttachmentCreate, AttachmentUpdate
+from app.schemas.schemas import AttachmentCreate
 
 
 class AttachmentRepository:
     def __init__(self, session: AsyncSession):
         self.session = session
 
-    async def create(self, data: AttachmentCreate, note_id: int, current_user) -> Attachment:
+    async def create(
+        self, data: AttachmentCreate, note_id: int, current_user
+    ) -> Attachment:
         new_attachment = Attachment(
             object_name=data.object_name,
             bucket_name=data.bucket_name,
@@ -32,4 +34,43 @@ class AttachmentRepository:
                 f"Attachment with content {data.original_filename} already exists"
             )
 
-    
+    async def get_by_id(
+        self, attachment_id: int, note_id: int, current_user
+    ) -> Attachment:
+        query = select(Attachment).where(
+            Attachment.id == attachment_id,
+            Attachment.note_id == note_id,
+            Attachment.user_id == current_user.id,
+        )
+        result = await self.session.scalars(query)
+        attachment = result.one_or_none()
+        if not attachment:
+            raise NotFoundException(f"Attachment with id {attachment_id} not found")
+        return attachment
+
+    async def get_all(
+        self,
+        note_id: int,
+        limit: int,
+        offset: int,
+        current_user,
+    ) -> list[Attachment]:
+        query = select(Attachment).where(
+            Attachment.note_id == note_id, Attachment.user_id == current_user.id
+        )
+
+        # 分页功能
+        query = query.limit(limit).offset(offset)
+
+        result = await self.session.scalars(query)
+        return list(result.all())
+
+    async def delete(self, attachment_id: int, current_user) -> None:
+        
+        attachment = await self.session.get(Attachment, attachment_id)
+
+        if not attachment or attachment.user_id != current_user.id:
+            raise NotFoundException(f"Attachment with id {attachment_id} not found")
+
+        await self.session.delete(attachment)
+        await self.session.commit()

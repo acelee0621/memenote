@@ -1,12 +1,22 @@
 import uuid
+from datetime import datetime, timedelta, timezone
 
 from fastapi import UploadFile, HTTPException
+from fastapi.responses import StreamingResponse
 from botocore.exceptions import ClientError
 
+from app.core.logging import get_logger
 from app.core.config import settings
 from app.core.s3_client import s3_client
+from app.core.exceptions import NotFoundException, ForbiddenException
 from app.repository.attachment_repo import AttachmentRepository
-from app.schemas.schemas import AttachmentCreate, AttachmentResponse
+from app.schemas.schemas import (
+    AttachmentCreate,
+    AttachmentResponse,
+    PresignedUrlResponse,
+)
+
+logger = get_logger(__name__)
 
 
 class AttachmentService:
@@ -55,21 +65,22 @@ class AttachmentService:
                 )
             except ClientError as e:
                 error_code = e.response.get("Error", {}).get("Code", "UnknownError")
+                logger.error(
+                    f"Failed to upload file {original_filename}: {error_code} - {str(e)}"
+                )
                 match error_code:
                     case "NoSuchBucket":
-                        raise HTTPException(
-                            status_code=404,
-                            detail=f"Bucket '{settings.MINIO_BUCKET}' does not exist",
-                        )
+                        raise NotFoundException("Storage bucket does not exist")
                     case "AccessDenied":
-                        raise HTTPException(
-                            status_code=403, detail="Permission denied to upload file"
-                        )
+                        raise ForbiddenException("Permission denied to upload file")
                     case _:
                         raise HTTPException(
                             status_code=500, detail=f"S3 upload failed: {str(e)}"
                         )
             except Exception as e:
+                logger.error(
+                    f"Unexpected error uploading file {original_filename}: {str(e)}"
+                )
                 raise HTTPException(
                     status_code=500, detail=f"File upload error: {str(e)}"
                 )
@@ -105,3 +116,144 @@ class AttachmentService:
             raise  # 直接传递已处理的HTTP异常
         except Exception as e:
             raise HTTPException(status_code=500, detail=f"Unexpected error: {str(e)}")
+
+    async def get_attachment(
+        self, attachment_id: int, note_id: int, current_user
+    ) -> AttachmentResponse:
+        attachment = await self.repository.get_by_id(
+            attachment_id, note_id, current_user
+        )
+        return AttachmentResponse.model_validate(attachment)
+
+    async def get_attachments(
+        self,
+        note_id: int,
+        limit: int,
+        offset: int,
+        current_user,
+    ) -> list[AttachmentResponse]:
+        attachments = await self.repository.get_all(
+            note_id=note_id,
+            limit=limit,
+            offset=offset,
+            current_user=current_user,
+        )
+        return [
+            AttachmentResponse.model_validate(attachment) for attachment in attachments
+        ]
+
+    async def delete_attachment(
+        self, attachment_id: int, note_id: int, current_user
+    ) -> None:
+        # 先删除数据库记录
+        attachment = await self.get_attachment(
+            attachment_id=attachment_id, note_id=note_id, current_user=current_user
+        )
+        await self.repository.delete(attachment.id, current_user)
+        logger.info(f"Deleted attachment record {attachment_id} from database")
+
+        # 再删除文件
+        try:
+            s3_client.delete_object(
+                Bucket=attachment.bucket_name, Key=attachment.object_name
+            )
+        except ClientError as e:
+            error_code = e.response.get("Error", {}).get("Code", "Unknown")
+            logger.error(
+                f"Failed to delete attachment {attachment_id}: {error_code} - {str(e)}"
+            )
+            match error_code:
+                case "NoSuchKey":
+                    raise NotFoundException("File not found in storage")
+                case "AccessDenied":
+                    raise ForbiddenException("Permission denied to access file")
+                case _:
+                    logger.error(f"MinIO deletion failed, but database record is already deleted: {attachment_id}")
+                    raise HTTPException(status_code=500, detail="Failed to delete file")                    
+                    # TODO: 可选择记录到日志或队列，异步清理，优化一致性
+        except Exception as e:
+            logger.error(
+                f"Unexpected error deleting attachment {attachment_id}: {str(e)}"
+            )
+            raise HTTPException(status_code=500, detail="An unexpected error occurred")
+        
+
+    async def download_attachment(self, attachment_id: int, note_id: int, current_user):
+        attachment = await self.get_attachment(
+            attachment_id=attachment_id, note_id=note_id, current_user=current_user
+        )
+        if not attachment:
+            raise HTTPException(status_code=404, detail="Attachment not found")
+
+        try:
+            s3_response = s3_client.get_object(
+                Bucket=attachment.bucket_name, Key=attachment.object_name
+            )
+            file_stream = s3_response["Body"]
+            return StreamingResponse(
+                content=file_stream,
+                media_type=attachment.content_type,
+                headers={
+                    "Content-Disposition": f"attachment; filename={attachment.original_filename}"
+                },
+            )
+        except ClientError as e:
+            error_code = e.response.get("Error", {}).get("Code", "Unknown")
+            logger.error(
+                f"Failed to download attachment {attachment_id}: {error_code} - {str(e)}"
+            )
+            match error_code:
+                case "NoSuchKey":
+                    raise NotFoundException("File not found in storage")
+                case "AccessDenied":
+                    raise ForbiddenException("Permission denied to access file")
+                case _:
+                    raise HTTPException(
+                        status_code=500, detail="Failed to download file"
+                    )
+        except Exception as e:
+            logger.error(
+                f"Unexpected error downloading attachment {attachment_id}: {str(e)}"
+            )
+            raise HTTPException(status_code=500, detail="An unexpected error occurred")
+
+    async def get_presigned_url(
+        self, attachment_id: int, note_id: int, current_user
+    ) -> PresignedUrlResponse:
+        attachment = await self.get_attachment(
+            attachment_id=attachment_id, note_id=note_id, current_user=current_user
+        )
+
+        try:
+            expires_in = 60 * 60 * 24
+            expires_at = datetime.now(timezone.utc) + timedelta(seconds=expires_in)
+            presigned_url = s3_client.generate_presigned_url(
+                "get_object",
+                Params={
+                    "Bucket": attachment.bucket_name,
+                    "Key": attachment.object_name,
+                },
+                ExpiresIn=86400,
+            )
+            return PresignedUrlResponse(
+                url=presigned_url,
+                expires_at=expires_at,
+                filename=attachment.original_filename,
+                content_type=attachment.content_type,
+                size=attachment.size,
+                attachment_id=attachment_id,
+            )
+        except ClientError as e:
+            error_code = e.response.get("Error", {}).get("Code", "Unknown")
+            logger.error(
+                f"Failed to download attachment {attachment_id}: {error_code} - {str(e)}"
+            )
+            match error_code:
+                case "NoSuchKey":
+                    raise NotFoundException("File not found in storage")
+                case "AccessDenied":
+                    raise ForbiddenException("Permission denied to access file")
+                case _:
+                    raise HTTPException(
+                        status_code=500, detail="Failed to generate presigned URL"
+                    )

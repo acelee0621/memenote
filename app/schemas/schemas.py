@@ -1,8 +1,6 @@
 from pydantic import BaseModel, ConfigDict, EmailStr, Field
 from datetime import datetime
-from sqlalchemy import inspect
 
-from app.models.models import Attachment
 
 # 配置基类，启用 ORM 模式
 class BaseSchema(BaseModel):
@@ -126,4 +124,13 @@ class AttachmentResponse(AttachmentBase):
     user_id: int = Field(..., description="所属用户ID")
     created_at: datetime = Field(..., description="创建时间")
     updated_at: datetime = Field(..., description="更新时间")
+    
+    
+class PresignedUrlResponse(BaseModel):
+    url: str = Field(..., description="Pre-signed URL for the attachment")
+    expires_at: datetime = Field(..., description="Expiration time of the pre-signed URL")
+    filename: str = Field(..., description="Original filename of the attachment")
+    content_type: str = Field(..., description="MIME type of the attachment")
+    size: int = Field(..., description="Size of the attachment in bytes")
+    attachment_id: int = Field(..., description="ID of the attachment")
     

@@ -1,10 +1,12 @@
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, Query, status
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.logging import get_logger
+from app.core.database import get_db
 from app.core.security import get_current_user
-from app.core.dependencies import get_note_service
+from app.repository.note_repo import NoteRepository
 from app.service.note_service import NoteService
 from app.schemas.schemas import (
     NoteCreate,
@@ -24,11 +26,14 @@ router = APIRouter(
     prefix="/notes", tags=["Notes"], dependencies=[Depends(get_current_user)]
 )
 
+# Include attachment routes
+router.include_router(attachment_routes.router)
 
-router.include_router(
-    attachment_routes.router,
-    prefix="/{note_id}/attachments",   
-)
+
+def get_note_service(session: AsyncSession = Depends(get_db)) -> NoteService:
+    """Dependency for getting NoteService instance."""
+    repository = NoteRepository(session)
+    return NoteService(repository)
 
 
 @router.post("", response_model=NoteResponse, status_code=status.HTTP_201_CREATED)

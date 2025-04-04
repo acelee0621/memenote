@@ -1,22 +1,23 @@
-from typing import Annotated
+from typing import Annotated, Union
 
-from fastapi import APIRouter, Depends, UploadFile, File, HTTPException, status
+from fastapi import APIRouter, Depends, Query, UploadFile, File, status
+from fastapi.responses import StreamingResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
 from app.core.logging import get_logger
 from app.core.security import get_current_user
-from app.core.dependencies import get_note_service
-from app.service.note_service import NoteService
+from app.core.dependencies import get_attachment_note_id
 from app.service.attachment_service import AttachmentService
 from app.repository.attachment_repo import AttachmentRepository
-from app.schemas.schemas import UserResponse, AttachmentResponse
+from app.schemas.schemas import UserResponse, AttachmentResponse, PresignedUrlResponse
+from app.schemas.param_schemas import AttachmentQueryParams
 
 
 logger = get_logger(__name__)
 
 
-router = APIRouter()
+router = APIRouter(prefix="/{note_id}/attachments")
 
 
 def get_attachment_service(
@@ -37,33 +38,126 @@ async def upload_note_attachment(
     file: Annotated[
         UploadFile, File(..., title="Attachment of Note", description="Upload a file")
     ],  # 使用 FastAPI 的 UploadFile 来接收文件
-    note_id: int,
-    attachment_service: AttachmentService = Depends(get_attachment_service),
-    note_service: NoteService = Depends(get_note_service),
+    note_id: Annotated[int, Depends(get_attachment_note_id)],
+    service: AttachmentService = Depends(get_attachment_service),
     current_user: UserResponse = Depends(get_current_user),
 ):
     try:
-        # 1. 验证 Note 是否存在且属于当前用户
-        note = await note_service.get_note(note_id=note_id, current_user=current_user)
-        if not note:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail="Note not found or insufficient permissions",
-            )
-
+        # 1. 验证 Note 是否存在且属于当前用户,note_id已由依赖项get_note_id验证并提供
         # 2. 上传附件
-        created_attachment = await attachment_service.add_attachment_to_note(
+        created_attachment = await service.add_attachment_to_note(
             file=file, note_id=note_id, current_user=current_user
         )
         logger.info(f"Uploaded attachment {created_attachment.id} for note {note_id}")
         return created_attachment  # 返回创建的附件信息
-
-    except HTTPException as http_exc:
-        raise http_exc  # 重新抛出已知的 HTTP 异常
     except Exception as e:
         logger.error(f"Failed to upload attachment for note {note_id}: {str(e)}")
-        # 在生产环境中，避免暴露详细错误
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Failed to upload attachment",
+        raise
+
+
+@router.get(
+    "/{attachment_id}/download",
+    response_class=StreamingResponse,
+    summary="[Attachments] Download an attachment directly",
+)
+async def download_attachment(
+    note_id: Annotated[int, Depends(get_attachment_note_id)],
+    attachment_id: int,
+    service: AttachmentService = Depends(get_attachment_service),
+    current_user: UserResponse = Depends(get_current_user),
+):
+    try:
+        response = await service.download_attachment(
+            attachment_id=attachment_id, note_id=note_id, current_user=current_user
         )
+        return response
+    except Exception as e:
+        logger.error(f"Failed to download attachment {attachment_id}: {str(e)}")
+        raise
+
+
+@router.delete(
+    "/{attachment_id}",
+    status_code=status.HTTP_204_NO_CONTENT,
+    summary="[Attachments] Delete an attachment",
+)
+async def delete_attachment(
+    note_id: Annotated[int, Depends(get_attachment_note_id)],
+    attachment_id: int,
+    service: AttachmentService = Depends(get_attachment_service),
+    current_user: UserResponse = Depends(get_current_user),
+):
+    try:
+        response = await service.delete_attachment(
+            attachment_id=attachment_id, note_id=note_id, current_user=current_user
+        )
+        return response
+    except Exception as e:
+        logger.error(f"Failed to delete attachment {attachment_id}: {str(e)}")
+        raise
+
+
+@router.get(
+    "",
+    response_model=list[AttachmentResponse],
+    summary="[Attachments] Get all attachments",
+)
+async def get_all_attachments(
+    params: Annotated[AttachmentQueryParams, Query()],
+    note_id: Annotated[int, Depends(get_attachment_note_id)],
+    service: AttachmentService = Depends(get_attachment_service),
+    current_user: UserResponse = Depends(get_current_user),
+) -> list[AttachmentResponse]:
+    try:
+        all_attachments = await service.get_attachments(
+            note_id=note_id,
+            limit=params.limit,
+            offset=params.offset,
+            current_user=current_user,
+        )
+        logger.info(f"Retrieved {len(all_attachments)} attachments")
+        return all_attachments
+    except Exception as e:
+        logger.error(f"Failed to fetch all attachments: {str(e)}")
+        raise
+
+
+
+@router.get(
+    "/{attachment_id}",
+    response_model=Union[AttachmentResponse, PresignedUrlResponse],
+    summary="[Attachments] Get attachment by id or pre-signed URL",
+)
+async def get_attachment(
+    attachment_id: int,
+    note_id: Annotated[int, Depends(get_attachment_note_id)],
+    presigned: Annotated[
+        bool, Query(description="If true, return pre-signed URL")
+    ] = False,
+    service: AttachmentService = Depends(get_attachment_service),
+    current_user: UserResponse = Depends(get_current_user),
+) -> Union[AttachmentResponse, PresignedUrlResponse]:
+    if presigned:
+        try:
+            response = await service.get_presigned_url(
+                attachment_id, note_id, current_user
+            )
+            logger.info(f"Generated pre-signed URL for attachment {attachment_id}")
+            return response
+        except Exception as e:
+            logger.error(
+                f"Failed to get pre-signed URL for attachment {attachment_id}: {str(e)}"
+            )
+            raise
+    else:
+        try:
+            attachment = await service.get_attachment(
+                attachment_id=attachment_id,
+                note_id=note_id,
+                current_user=current_user,
+            )
+            logger.info(f"Retrieved attachment {attachment_id}")
+            return attachment
+        except Exception as e:
+            logger.error(f"Failed to get attachment {attachment_id}: {str(e)}")
+            raise

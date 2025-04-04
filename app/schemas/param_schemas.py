@@ -36,3 +36,11 @@ class TodoQueryParams(CommonQueryParams):
 
 class ReminderQueryParams(CommonQueryParams):
     pass
+
+
+class AttachmentQueryParams(BaseModel):
+    limit: Annotated[
+        int,
+        Field(default=20, ge=1, le=100, description="Number of attachments per page"),
+    ]  # 默认每页20条,可被覆盖
+    offset: Annotated[int, Field(default=0, ge=0, description="Offset for pagination")]
