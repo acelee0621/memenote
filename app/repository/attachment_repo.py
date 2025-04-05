@@ -1,4 +1,4 @@
-from sqlalchemy import select
+from sqlalchemy import select, desc, asc
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -53,11 +53,18 @@ class AttachmentRepository:
         note_id: int,
         limit: int,
         offset: int,
+        order_by: str | None,
         current_user,
     ) -> list[Attachment]:
         query = select(Attachment).where(
             Attachment.note_id == note_id, Attachment.user_id == current_user.id
         )
+        
+        if order_by:
+            if order_by == "created_at desc":
+                query = query.order_by(desc(Attachment.created_at))
+            elif order_by == "created_at asc":
+                query = query.order_by(asc(Attachment.created_at))
 
         # 分页功能
         query = query.limit(limit).offset(offset)

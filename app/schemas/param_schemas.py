@@ -39,6 +39,10 @@ class ReminderQueryParams(CommonQueryParams):
 
 
 class AttachmentQueryParams(BaseModel):
+    order_by: Annotated[
+        Literal["created_at desc", "created_at asc"] | None,
+        Field(default=None, description="Order by field"),
+    ]
     limit: Annotated[
         int,
         Field(default=20, ge=1, le=100, description="Number of attachments per page"),

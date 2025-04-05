@@ -111,6 +111,7 @@ async def get_all_attachments(
     try:
         all_attachments = await service.get_attachments(
             note_id=note_id,
+            order_by=params.order_by,
             limit=params.limit,
             offset=params.offset,
             current_user=current_user,

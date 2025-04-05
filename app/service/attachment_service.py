@@ -128,12 +128,14 @@ class AttachmentService:
     async def get_attachments(
         self,
         note_id: int,
+        order_by: str | None,
         limit: int,
         offset: int,
         current_user,
     ) -> list[AttachmentResponse]:
         attachments = await self.repository.get_all(
             note_id=note_id,
+            order_by=order_by,
             limit=limit,
             offset=offset,
             current_user=current_user,

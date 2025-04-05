@@ -162,7 +162,7 @@ class Attachment(Base, DateTimeMixin):
         index=True,  # 频繁用于查找，需要索引
     )
     bucket_name: Mapped[str] = mapped_column(
-        String(100),  # 存储附件的 Bucket 名称
+        String(100),
         nullable=False,
     )
     # 文件元数据
