@@ -4,8 +4,6 @@ from botocore.client import Config
 from app.core.config import settings
 
 
-
-
 s3_client = boto3.client(
     's3',
     endpoint_url=f"{'https' if settings.MINIO_USE_SSL else 'http'}://{settings.MINIO_ENDPOINT}",
