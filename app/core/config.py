@@ -4,7 +4,7 @@ from functools import lru_cache
 
 class Settings(BaseSettings):
     app_name: str = "MemeNote API"
-    JWT_SECRET: str
+    JWT_SECRET: str = "your-jwt-secret"
     JWT_ALGORITHM: str = "HS256"
     JWT_EXPIRATION: int = 30
     DEBUG: bool = False
@@ -26,8 +26,8 @@ class Settings(BaseSettings):
 
     # S3/MinIO 配置
     MINIO_ENDPOINT: str = "localhost:9000"
-    MINIO_ACCESS_KEY: str
-    MINIO_SECRET_KEY: str
+    MINIO_ACCESS_KEY: str = "minio"
+    MINIO_SECRET_KEY: str = "miniosecret"
     MINIO_USE_SSL: bool = False
     MINIO_BUCKET: str = "memenote"
 
