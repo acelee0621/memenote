@@ -140,44 +140,25 @@ class Attachment(Base, DateTimeMixin):
     __tablename__ = "attachments"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
-    # 外键关联到 Note 表
     note_id: Mapped[int] = mapped_column(
-        ForeignKey(
-            "notes.id", ondelete="CASCADE"
-        ),  # 如果笔记删除，数据库层面也删除此附件记录
+        ForeignKey("notes.id", ondelete="CASCADE"),
         nullable=False,
         index=True,
     )
-    # 外键直接关联到 User 表 (方便权限检查和查询)
     user_id: Mapped[int] = mapped_column(
         ForeignKey("users.id", ondelete="CASCADE"),
         nullable=False,
         index=True,
     )
-    # MinIO 相关信息
     object_name: Mapped[str] = mapped_column(
-        String(512),  # 存储在 MinIO 中的对象 key/路径，长度可以给足一些
-        nullable=False,
-        unique=True,  # 确保每个 MinIO 对象只被引用一次
-        index=True,  # 频繁用于查找，需要索引
+        String(512), nullable=False, unique=True, index=True
     )
-    bucket_name: Mapped[str] = mapped_column(
-        String(100),
-        nullable=False,
-    )
-    # 文件元数据
-    original_filename: Mapped[str] = mapped_column(
-        String(255),  # 用户上传时的原始文件名
-        nullable=False,
-    )
-    content_type: Mapped[str] = mapped_column(
-        String(100),  # 文件的 MIME 类型
-        nullable=False,
-    )
+    bucket_name: Mapped[str] = mapped_column(String(100), nullable=False)
+    original_filename: Mapped[str] = mapped_column(String(255), nullable=False)
+    content_type: Mapped[str] = mapped_column(String(100), nullable=False)
     size: Mapped[int] = mapped_column(
-        Integer,  # 使用 BigInteger 以支持大于 2GB 的文件
-        nullable=False,
-    )
+        Integer, nullable=False
+    )  # 使用 BigInteger 以支持大于 2GB 的文件
     # 关系映射 (反向)
     note: Mapped["Note"] = relationship("Note", back_populates="attachments")
     user: Mapped["User"] = relationship("User", back_populates="attachments")
