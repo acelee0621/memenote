@@ -30,14 +30,14 @@ def get_attachment_service(
 
 @router.post(
     "",
-    response_model=AttachmentResponse,  # 返回新创建的附件信息
+    response_model=AttachmentResponse,
     status_code=status.HTTP_201_CREATED,
-    summary="[Attachments] Upload an attachment for a specific note",  # 添加 OpenAPI 描述
+    summary="[Attachments] Upload an attachment for a specific note",
 )
 async def upload_note_attachment(
     file: Annotated[
         UploadFile, File(..., title="Attachment of Note", description="Upload a file")
-    ],  # 使用 FastAPI 的 UploadFile 来接收文件
+    ],
     note_id: Annotated[int, Depends(get_attachment_note_id)],
     service: AttachmentService = Depends(get_attachment_service),
     current_user: UserResponse = Depends(get_current_user),
@@ -121,7 +121,6 @@ async def get_all_attachments(
     except Exception as e:
         logger.error(f"Failed to fetch all attachments: {str(e)}")
         raise
-
 
 
 @router.get(

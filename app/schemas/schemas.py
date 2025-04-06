@@ -112,11 +112,6 @@ class AttachmentBase(BaseSchema):
 class AttachmentCreate(AttachmentBase):
     pass
 
-# 更新附件时的请求模型（所有字段可选）
-class AttachmentUpdate(BaseModel):
-    note_id: int | None = Field(None, description="关联的笔记ID")
-    original_filename: str | None = Field(None, max_length=255, description="原始文件名")
-    content_type: str | None = Field(None, max_length=100, description="文件MIME类型")
 
 # 附件响应模型
 class AttachmentResponse(AttachmentBase):
