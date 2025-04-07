@@ -118,12 +118,12 @@ docker compose -f compose.traefik.yaml up -d
 ```
 memenote/
 ├── app/                 # 主应用目录
-│   ├── core/            # 核心配置（数据库、Celery、认证、**存储(storage.py)**等）
-│   ├── models/          # 数据模型（User、Note、Todo、Reminder、**Attachment**等）
+│   ├── core/            # 核心配置（数据库、Celery、认证、S3客户端等）
+│   ├── models/          # 数据模型（User、Note、Todo、Reminder、Attachment等）
 │   ├── repository/      # 数据操作层
-│   ├── routes/          # API 路由（认证、笔记、提醒、**附件(attachment.py)**等）
+│   ├── routes/          # API 路由（认证、笔记、TODOS、提醒、附件）
 │   ├── schemas/         # 数据校验 schema
-│   ├── service/         # 业务逻辑层（**附件服务(attachment_service.py)**等）
+│   ├── service/         # 业务逻辑层
 │   ├── tasks/           # Celery 任务
 │   └── main.py          # FastAPI 入口
 ├── alembic/             # 数据库迁移
@@ -137,7 +137,6 @@ memenote/
 ├── pyproject.toml       # uv 依赖管理文件
 └── README.md            # 你正在看的文档！😊
 ```
-*（注意：上述结构中关于附件的文件名和位置是基于常见实践的假设，请根据你的实际代码调整）*
 
 ---
 

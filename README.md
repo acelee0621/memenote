@@ -1,184 +1,186 @@
-# Memenote 项目 📝✨
+[中文文档](https://github.com/acelee0621/memenote/blob/main/README_zh.md)
 
-欢迎体验 **Memenote**！这是一个基于 FastAPI 的笔记工具，专为记录和管理你的灵感与任务而设计。使用 `uv` 管理依赖，支持用户注册、笔记创建、待办事项 (Todo)、提醒 (Reminder)，还有 Celery 驱动的实时提醒功能，通过 SSE（服务器推送事件）送到你的客户端！📩 **新增功能：支持笔记附件上传、下载和分享，使用 Boto3 与 MinIO (或 S3 兼容存储) 集成。** 📎 项目使用 Alembic 配置数据库迁移并且已 Docker 化，支持开发模式和 Traefik 引入 HTTPS 的生产配置。快来试试吧！🚀
+# Memenote Project 📝✨
 
----
-
-## 项目简介 🌟
-
-Memenote 是一个轻量但功能强大的笔记管理工具，旨在帮助你：
-- 📋 创建和管理个人笔记 (Note)
-- 📎 **为笔记添加附件**：支持通过 MinIO (S3 兼容) 进行文件的上传、下载和生成分享链接
-- ✅ 在笔记下添加待办事项 (Todo) 或独立创建 Todo
-- ⏰ 设置提醒 (Reminder)，支持关联笔记或独立存在
-- 🔒 用户注册与认证，确保数据安全
-- 📡 通过 Celery 和 SSE 实现实时提醒推送
-- 🐳 Docker 部署，支持开发与生产环境
-
-无论你是想记录灵感、规划任务、设置定时提醒，还是**为笔记添加附件**，Memenote 都能助你一臂之力！💪
+Welcome to **Memenote**! This is a FastAPI-based note-taking tool designed for recording and managing your inspirations and tasks. It uses `uv` for dependency management and supports user registration, note creation, To-dos, Reminders, and real-time reminders powered by Celery, delivered to your client via SSE (Server-Sent Events)! 📩 **New Feature: Supports note attachment upload, download, and sharing, integrated with MinIO (or S3 compatible storage) using Boto3.** 📎 The project uses Alembic for database migrations and is Dockerized, supporting development mode and production configuration with Traefik for HTTPS. Come give it a try! 🚀
 
 ---
 
-## 快速开始 🚀
+## Project Overview 🌟
 
-Memenote 使用 `uv` 管理依赖和运行环境。如果你没用过 `uv`，别担心！下面是详细步骤，手把手带你跑起来~ 😎
+Memenote is a lightweight yet powerful note management tool designed to help you:
+- 📋 Create and manage personal notes (Note)
+- 📎 **Add attachments to notes**: Supports file upload, download, and generating sharing links via MinIO (S3 compatible)
+- ✅ Add To-dos under notes or create standalone To-dos
+- ⏰ Set Reminders, which can be associated with notes or exist independently
+- 🔒 User registration and authentication to ensure data security
+- 📡 Real-time reminder push notifications via Celery and SSE
+- 🐳 Docker deployment, supporting both development and production environments
 
-### 1. 前置条件 ⚙️
-- **Python 版本**: 3.8+
-- **安装 uv**:
-  在终端运行：
+Whether you want to capture ideas, plan tasks, set timed reminders, or **add attachments to your notes**, Memenote can help you out! 💪
+
+---
+
+## Quick Start 🚀
+
+Memenote uses `uv` for managing dependencies and the runtime environment. If you haven't used `uv` before, don't worry! Here are the detailed steps to get you up and running~ 😎
+
+### 1. Prerequisites ⚙️
+- **Python Version**: 3.8+
+- **Install uv**:
+  Run in terminal:
   ```bash
   pip install uv
   ```
-  或参考 [uv 官方文档](https://github.com/astral-sh/uv)。
-- **MinIO (或 S3 兼容服务)**: 需要一个运行中的 MinIO 实例或配置好 S3 兼容的对象存储服务，用于附件存储。
+  Or refer to the [uv official documentation](https://github.com/astral-sh/uv).
+- **MinIO (or S3 Compatible Service)**: You need a running MinIO instance or a configured S3 compatible object storage service for attachment storage.
 
-### 2. 克隆项目 📥
-获取代码到本地：
+### 2. Clone Project 📥
+Get the code locally:
 ```bash
-git clone [https://github.com/acelee0621/memenote.git](https://github.com/acelee0621/memenote.git)
+git clone https://github.com/acelee0621/memenote.git
 cd memenote
 ```
 
-### 3. 使用 uv 安装依赖 📦
-依赖都定义在 `pyproject.toml` 中，使用 `uv` 快速安装（包含 `boto3`）：
+### 3. Install Dependencies with uv 📦
+Dependencies are defined in `pyproject.toml`. Install quickly using `uv` (includes `boto3`):
 ```bash
 uv sync
 ```
 
-### 4. 配置环境变量 🌍
-复制 `.env.example` 到 `.env`，并根据需要修改：
+### 4. Configure Environment Variables 🌍
+Copy `.env.example` to `.env` and modify as needed:
 ```bash
 cp .env.example .env
 ```
-- `JWT_SECRET`: 用于用户认证的密钥
-- `JWT_ALGORITHM`: JWT加密算法（`HS256`）
-- `BROKER_HOST` 和 `REDIS_HOST`: Celery 的消息队列和结果存储地址 (可选，默认`localhost`)
-- `POSTGRES_HOST`: 数据库主机（可选，默认`localhost`）
-- `POSTGRES_PORT`: 数据库端口（可选，默认`5432`）
-- `POSTGRES_DB`: 数据库（可选，默认`memenote`）
-- `POSTGRES_USER`: 数据库用户名（可选，默认`postgres`）
-- `POSTGRES_PASSWORD`: 数据库密码（可选，默认`postgres`）
-- **`MINIO_ENDPOINT`**: MinIO 服务地址 (例如 `localhost:9000`)
-- **`MINIO_ACCESS_KEY`**: MinIO 访问密钥
-- **`MINIO_SECRET_KEY`**: MinIO 私有密钥
-- **`MINIO_BUCKET_NAME`**: 用于存储附件的 Bucket 名称 (例如 `memenote-attachments`)
-- **`MINIO_USE_SSL`**: 是否对 MinIO 连接使用 SSL (`True`或`False`, 默认为`False`)
+- `JWT_SECRET`: Secret key for user authentication
+- `JWT_ALGORITHM`: JWT encryption algorithm (`HS256`)
+- `BROKER_HOST` and `REDIS_HOST`: Message queue and result backend addresses for Celery (optional, default `localhost`)
+- `POSTGRES_HOST`: Database host (optional, default `localhost`)
+- `POSTGRES_PORT`: Database port (optional, default `5432`)
+- `POSTGRES_DB`: Database name (optional, default `memenote`)
+- `POSTGRES_USER`: Database username (optional, default `postgres`)
+- `POSTGRES_PASSWORD`: Database password (optional, default `postgres`)
+- **`MINIO_ENDPOINT`**: MinIO service address (e.g., `localhost:9000`)
+- **`MINIO_ACCESS_KEY`**: MinIO access key
+- **`MINIO_SECRET_KEY`**: MinIO secret key
+- **`MINIO_BUCKET_NAME`**: Bucket name for storing attachments (e.g., `memenote-attachments`)
+- **`MINIO_USE_SSL`**: Whether to use SSL for MinIO connection (`True` or `False`, default `False`)
 
-### 5. 运行数据库迁移 🗄️
-初始化数据库表结构：
+### 5. Run Database Migrations 🗄️
+Initialize the database schema:
 ```bash
 uv run alembic upgrade head
 ```
 
-### 6. 启动 FastAPI 服务 ▶️
-运行主程序：
+### 6. Start FastAPI Service ▶️
+Run the main application:
 ```bash
 uv run uvicorn app.main:app --host 0.0.0.0 --port 8000
 ```
-访问 `http://localhost:8000/docs` 查看 API 文档！📖
+Visit `http://localhost:8000/docs` to view the API documentation! 📖
 
-### 7. 启动 Celery Worker 🕒
-提醒功能依赖 Celery，另开一个终端运行：
+### 7. Start Celery Worker 🕒
+The reminder feature depends on Celery. Run in a separate terminal:
 ```bash
 uv run celery -A app.core.celery_app worker --loglevel=info --pool=threads -Q celery,reminder_queue --autoscale=4,2
 ```
 
 ---
 
-## Docker 部署 🐳
+## Docker Deployment 🐳
 
-想用 Docker 跑起来？我们提供了三种配置：
+Want to run it with Docker? We provide three configurations:
 
-**注意**: 以下 Docker 配置默认不包含 MinIO 服务。你需要自行运行一个 MinIO 实例，并在 `.env` 文件或 Docker Compose 配置中提供正确的连接信息。
+**Note**: The following Docker configurations do not include the MinIO service by default. You need to run a MinIO instance yourself and provide the correct connection details in the `.env` file or Docker Compose configuration.
 
-### 开发模式 🛠️
+### Development Mode 🛠️
 ```bash
 docker compose -f compose.yaml -f compose.dev.yaml up -d --watch
 ```
-- 包含 FastAPI、Celery Worker 和 Redis，适合本地开发。
+- Includes FastAPI, Celery Worker, and Redis, suitable for local development.
 
-### 生产模式（无https）
+### Production Mode (No HTTPS)
 ```bash
 docker compose up -d
 ```
 
-### 生产模式 + HTTPS 🔐
-使用 Traefik 引入 HTTPS：
+### Production Mode + HTTPS 🔐
+Using Traefik for HTTPS:
 ```bash
 docker compose -f compose.traefik.yaml up -d
 ```
-- 需要在 `traefik/certs/` 下准备 `cert.pem` 和 `key.pem`。
-- 默认监听 `443` 端口，确保证书配置正确。
+- Requires `cert.pem` and `key.pem` under `traefik/certs/`.
+- Listens on port `443` by default, ensure certificate configuration is correct.
 
 ---
 
-## 项目结构 🗂️
-快速了解代码布局：
+## Project Structure 🗂️
+Quickly understand the code layout:
 ```
 memenote/
-├── app/                 # 主应用目录
-│   ├── core/            # 核心配置（数据库、Celery、认证、**存储(storage.py)**等）
-│   ├── models/          # 数据模型（User、Note、Todo、Reminder、**Attachment**等）
-│   ├── repository/      # 数据操作层
-│   ├── routes/          # API 路由（认证、笔记、提醒、**附件(attachment.py)**等）
-│   ├── schemas/         # 数据校验 schema
-│   ├── service/         # 业务逻辑层（**附件服务(attachment_service.py)**等）
-│   ├── tasks/           # Celery 任务
-│   └── main.py          # FastAPI 入口
-├── alembic/             # 数据库迁移
-├── tests/               # 测试用例
-├── traefik/             # Traefik 配置（生产环境）
-├── Dockerfile           # Docker 镜像定义
-├── compose.yaml         # Docker Compose 基础配置
-├── compose.dev.yaml     # Docker Compose 开发环境配置
-├── compose.traefik.yaml # Docker Compose Traefik 配置
-├── .env.example         # 环境变量示例
-├── pyproject.toml       # uv 依赖管理文件
-└── README.md            # 你正在看的文档！😊
+├── app/                 # Main application directory
+│   ├── core/            # Core configurations (Database, Celery, Auth, S3 Client, etc.)
+│   ├── models/          # Data models (User, Note, Todo, Reminder, Attachment, etc.)
+│   ├── repository/      # Data access layer
+│   ├── routes/          # API routes (Auth, Notes, Reminders, Attachments, etc.)
+│   ├── schemas/         # Data validation schemas
+│   ├── service/         # Business logic layer.
+│   ├── tasks/           # Celery tasks
+│   └── main.py          # FastAPI entry point
+├── alembic/             # Database migrations
+├── tests/               # Test cases
+├── traefik/             # Traefik configuration (production)
+├── Dockerfile           # Docker image definition
+├── compose.yaml         # Base Docker Compose configuration
+├── compose.dev.yaml     # Development Docker Compose configuration
+├── compose.traefik.yaml # Traefik Docker Compose configuration
+├── .env.example         # Example environment variables
+├── pyproject.toml       # uv dependency management file
+└── README.md            # The document you are reading! 😊
 ```
-*（注意：上述结构中关于附件的文件名和位置是基于常见实践的假设，请根据你的实际代码调整）*
+
 
 ---
 
-## 功能亮点 🌈
-- **用户管理** 👤: 注册、登录，JWT 认证保护你的数据。
-- **笔记系统** 📝: 创建、编辑、删除笔记，每个笔记可关联 Todo 和 Reminder。
-- **附件管理** 📎: 为笔记添加附件，支持通过 MinIO (S3 兼容) 进行文件的上传、下载和生成分享链接。
-- **待办事项** ✅: 支持独立或归属笔记的 Todo，标记完成状态。
-- **提醒功能** ⏰: 设置提醒时间，Celery 定时任务通过 SSE 实时推送。
-- **实时通知** 📡: 使用 Server-Sent Events (SSE) 接收提醒。
-- **Docker 支持** 🐳: 一键部署，开发和生产环境全搞定！
+## Feature Highlights 🌈
+- **User Management** 👤: Register, login, JWT authentication protects your data.
+- **Note System** 📝: Create, edit, delete notes. Each note can be associated with To-dos and Reminders.
+- **Attachment Management** 📎: Add attachments to notes, supporting upload, download, and generating sharing links via MinIO (S3 compatible).
+- **To-do Items** ✅: Supports standalone or note-associated To-dos, with completion status tracking.
+- **Reminder Function** ⏰: Set reminder times, Celery scheduled tasks push notifications in real-time via SSE.
+- **Real-time Notifications** 📡: Receive reminders using Server-Sent Events (SSE).
+- **Docker Support** 🐳: One-click deployment, covering both development and production environments!
 
 ---
 
-## 注意事项 ⚠️
-- **数据库**: 默认使用 PostgreSQL。
-- **对象存储**: **需要运行 MinIO 或配置 S3 兼容服务，并在 `.env` 文件中正确配置连接信息。确保指定的 Bucket 存在。**
-- **Celery**: 确保 Redis 和 RabbitMQ（或替代 broker）运行正常。
-- **HTTPS**: 生产环境需配置 Traefik 和证书。
-- **问题反馈**: 遇到问题？提个 issue 吧，我会尽快回复！✨
+## Important Notes ⚠️
+- **Database**: Uses PostgreSQL by default.
+- **Object Storage**: **Requires a running MinIO instance or configured S3 compatible service. Connection details must be correctly set in the `.env` file. Ensure the specified Bucket exists.**
+- **Celery**: Ensure Redis and RabbitMQ (or an alternative broker) are running correctly.
+- **HTTPS**: Requires Traefik and certificate configuration for production environments.
+- **Feedback**: Encountered an issue? Please file an issue, I'll respond as soon as possible! ✨
 
 ---
 
-## 贡献代码 🤝
-喜欢 Memenote 想加点料？欢迎参与：
-1. Fork 项目
-2. 创建分支 (`git checkout -b feature/cool-idea`)
-3. 提交代码 (`git commit -m "✨ 添加超赞功能"`)
-4. Push 到仓库 (`git push origin feature/cool-idea`)
-5. 创建 Pull Request
+## Contributing 🤝
+Like Memenote and want to add something? Contributions are welcome:
+1. Fork the project
+2. Create a branch (`git checkout -b feature/cool-idea`)
+3. Commit your changes (`git commit -m "✨ Add awesome feature"`)
+4. Push to the branch (`git push origin feature/cool-idea`)
+5. Create a Pull Request
 
 ---
 
-## 联系我 📬
-有问题或建议？欢迎在 GitHub 上提 issue。
-让我们一起让 Memenote 更强大！🌟
+## Contact Me 📬
+Have questions or suggestions? Feel free to open an issue on GitHub.
+Let's make Memenote even better together! 🌟
 
 ---
 
-## 致谢 🙏
-感谢 FastAPI、Celery、uv、Boto3、MinIO 和所有开源社区的支持！也谢谢你使用 Memenote！💖
+## Acknowledgements 🙏
+Thanks to FastAPI, Celery, uv, Boto3, MinIO, and the entire open-source community for their support! And thank you for using Memenote! 💖
 
 ---
 
