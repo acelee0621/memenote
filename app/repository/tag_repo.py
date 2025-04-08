@@ -1,4 +1,4 @@
-from sqlalchemy import select, desc, asc, or_
+from sqlalchemy import select, desc, asc
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
