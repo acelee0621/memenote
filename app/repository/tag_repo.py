@@ -20,7 +20,7 @@ class TagRepository:
             return new_tag
         except IntegrityError:
             await self.session.rollback()
-            raise AlreadyExistsException(f"Tag with name {data.content} already exists")
+            raise AlreadyExistsException(f"Tag with name {data.name} already exists")
 
     async def get_by_id(self, tag_id: int, current_user) -> Tag:
         query = select(Tag).where(Tag.id == tag_id, Tag.user_id == current_user.id)
