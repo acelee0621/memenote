@@ -88,10 +88,10 @@ async def delete_attachment(
     current_user: UserResponse = Depends(get_current_user),
 ):
     try:
-        response = await service.delete_attachment(
+        await service.delete_attachment(
             attachment_id=attachment_id, note_id=note_id, current_user=current_user
         )
-        return response
+        logger.info(f"Deleted attachment {attachment_id}")
     except Exception as e:
         logger.error(f"Failed to delete attachment {attachment_id}: {str(e)}")
         raise
