@@ -48,9 +48,11 @@ class NoteResponse(BaseSchema):
     content: str
     created_at: datetime
     updated_at: datetime
+    tags: list["TagResponseForNote"] | None = None
     todos: list["TodoResponse"] | None = None
     reminders: list["ReminderResponse"] | None = None
     attachments: list["AttachmentResponse"] | None = None
+    
 
 # 待办事项相关模型
 class TodoCreate(BaseModel):
@@ -129,3 +131,20 @@ class PresignedUrlResponse(BaseModel):
     size: int = Field(..., description="Size of the attachment in bytes")
     attachment_id: int = Field(..., description="ID of the attachment")
     
+    
+class TagCreate(BaseModel):
+    name: str = Field(..., max_length=50)    
+
+class TagUpdate(BaseModel):
+    name: str | None = None
+    
+
+class TagResponse(BaseSchema):
+    id: int
+    name: str
+    user_id: int
+    created_at: datetime
+    updated_at: datetime
+    
+class TagResponseForNote(BaseSchema):   
+    name: str
