@@ -43,10 +43,12 @@ class User(Base, DateTimeMixin):
     )
     reminders: Mapped[list["Reminder"]] = relationship(
         "Reminder", back_populates="user", cascade="all, delete-orphan"
-    )
-    # 新增：与 Attachment 的一对多关系 (直接关联，方便查询用户的所有附件)
+    )    
     attachments: Mapped[list["Attachment"]] = relationship(
         "Attachment", back_populates="user", cascade="all, delete-orphan"
+    )
+    tags: Mapped[list["Tag"]] = relationship(
+        "Tag", back_populates="user", cascade="all, delete-orphan"
     )
 
     def __repr__(self):
@@ -72,12 +74,14 @@ class Note(Base, DateTimeMixin):
     reminders: Mapped[list["Reminder"]] = relationship(
         "Reminder", back_populates="note", lazy="selectin"
     )
-    # 新增：与 Attachment 的一对多关系
     attachments: Mapped[list["Attachment"]] = relationship(
         "Attachment",
         back_populates="note",
         cascade="all, delete-orphan",
         lazy="selectin",
+    )
+    tags: Mapped[list["Tag"]] = relationship(
+        "Tag", secondary="note_tags", back_populates="notes", lazy="selectin"
     )
 
     __table_args__ = (
@@ -165,3 +169,39 @@ class Attachment(Base, DateTimeMixin):
 
     def __repr__(self):
         return f"<Attachment(id={self.id}, filename='{self.original_filename}', object_name='{self.object_name}')>"
+
+
+class Tag(Base, DateTimeMixin):
+    __tablename__ = "tags"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    name: Mapped[str] = mapped_column(
+        String(50), nullable=False, unique=True, index=True
+    )
+    user_id: Mapped[int] = mapped_column(
+        ForeignKey("users.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+    notes: Mapped[list["Note"]] = relationship(
+        "Note", secondary="note_tags", back_populates="tags", lazy="selectin"
+    )
+    user: Mapped["User"] = relationship("User", back_populates="tags")
+
+    __table_args__ = (
+        UniqueConstraint("user_id", "name", name="_user_tag_name_unique_constraint"),
+    )
+
+    def __repr__(self):
+        return f"<Tag(id={self.id}, name={self.name})>"
+
+
+class NoteTag(Base):
+    __tablename__ = "note_tags"
+
+    note_id: Mapped[int] = mapped_column(
+        ForeignKey("notes.id", ondelete="CASCADE"), primary_key=True
+    )
+    tag_id: Mapped[int] = mapped_column(
+        ForeignKey("tags.id", ondelete="CASCADE"), primary_key=True
+    )

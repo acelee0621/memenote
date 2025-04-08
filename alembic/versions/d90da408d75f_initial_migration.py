@@ -1,8 +1,8 @@
 """Initial migration
 
-Revision ID: 8f46a0f4536d
+Revision ID: d90da408d75f
 Revises: 
-Create Date: 2025-04-03 15:42:37.021299
+Create Date: 2025-04-08 12:33:24.281673
 
 """
 from typing import Sequence, Union
@@ -12,7 +12,7 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision: str = '8f46a0f4536d'
+revision: str = 'd90da408d75f'
 down_revision: Union[str, None] = None
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
@@ -44,6 +44,19 @@ def upgrade() -> None:
     sa.UniqueConstraint('user_id', 'content', name='_user_content_unique_constraint')
     )
     op.create_index(op.f('ix_notes_created_at'), 'notes', ['created_at'], unique=False)
+    op.create_table('tags',
+    sa.Column('id', sa.Integer(), autoincrement=True, nullable=False),
+    sa.Column('name', sa.String(length=50), nullable=False),
+    sa.Column('user_id', sa.Integer(), nullable=False),
+    sa.Column('created_at', sa.DateTime(timezone=True), nullable=False),
+    sa.Column('updated_at', sa.DateTime(timezone=True), nullable=False),
+    sa.ForeignKeyConstraint(['user_id'], ['users.id'], ondelete='CASCADE'),
+    sa.PrimaryKeyConstraint('id'),
+    sa.UniqueConstraint('user_id', 'name', name='_user_tag_name_unique_constraint')
+    )
+    op.create_index(op.f('ix_tags_created_at'), 'tags', ['created_at'], unique=False)
+    op.create_index(op.f('ix_tags_name'), 'tags', ['name'], unique=True)
+    op.create_index(op.f('ix_tags_user_id'), 'tags', ['user_id'], unique=False)
     op.create_table('attachments',
     sa.Column('id', sa.Integer(), autoincrement=True, nullable=False),
     sa.Column('note_id', sa.Integer(), nullable=False),
@@ -63,6 +76,13 @@ def upgrade() -> None:
     op.create_index(op.f('ix_attachments_note_id'), 'attachments', ['note_id'], unique=False)
     op.create_index(op.f('ix_attachments_object_name'), 'attachments', ['object_name'], unique=True)
     op.create_index(op.f('ix_attachments_user_id'), 'attachments', ['user_id'], unique=False)
+    op.create_table('note_tags',
+    sa.Column('note_id', sa.Integer(), nullable=False),
+    sa.Column('tag_id', sa.Integer(), nullable=False),
+    sa.ForeignKeyConstraint(['note_id'], ['notes.id'], ondelete='CASCADE'),
+    sa.ForeignKeyConstraint(['tag_id'], ['tags.id'], ondelete='CASCADE'),
+    sa.PrimaryKeyConstraint('note_id', 'tag_id')
+    )
     op.create_table('reminders',
     sa.Column('id', sa.Integer(), autoincrement=True, nullable=False),
     sa.Column('user_id', sa.Integer(), nullable=False),
@@ -100,11 +120,16 @@ def downgrade() -> None:
     op.drop_table('todos')
     op.drop_index(op.f('ix_reminders_created_at'), table_name='reminders')
     op.drop_table('reminders')
+    op.drop_table('note_tags')
     op.drop_index(op.f('ix_attachments_user_id'), table_name='attachments')
     op.drop_index(op.f('ix_attachments_object_name'), table_name='attachments')
     op.drop_index(op.f('ix_attachments_note_id'), table_name='attachments')
     op.drop_index(op.f('ix_attachments_created_at'), table_name='attachments')
     op.drop_table('attachments')
+    op.drop_index(op.f('ix_tags_user_id'), table_name='tags')
+    op.drop_index(op.f('ix_tags_name'), table_name='tags')
+    op.drop_index(op.f('ix_tags_created_at'), table_name='tags')
+    op.drop_table('tags')
     op.drop_index(op.f('ix_notes_created_at'), table_name='notes')
     op.drop_table('notes')
     op.drop_index(op.f('ix_users_username'), table_name='users')
