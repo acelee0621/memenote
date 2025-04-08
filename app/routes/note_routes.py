@@ -63,6 +63,7 @@ async def get_all_notes(
         all_notes = await service.get_notes(
             search=params.search,
             order_by=params.order_by,
+            tag_id=params.tag_id,
             limit=params.limit,
             offset=params.offset,
             current_user=current_user,
@@ -121,4 +122,48 @@ async def delete_note(
         logger.info(f"Deleted note {note_id}")
     except Exception as e:
         logger.error(f"Failed to delete note {note_id}: {str(e)}")
+        raise
+
+
+@router.post(
+    "/{note_id}/tags/{tag_id}",
+    response_model=NoteResponse,
+    status_code=status.HTTP_200_OK,
+    summary="[Tags] Add a tag to a specific note",
+)
+async def add_tag_to_note(
+    note_id: int,
+    tag_id: int,
+    service: NoteService = Depends(get_note_service),
+    current_user: UserResponse = Depends(get_current_user),
+) -> NoteResponse:
+    try:
+        updated_note = await service.add_tag_to_note(note_id, tag_id, current_user)
+        logger.info(f"Added tag {tag_id} to note {note_id} for user {current_user.id}")
+        return updated_note
+    except Exception as e:
+        logger.error(f"Failed to add tag {tag_id} to note {note_id}: {str(e)}")
+        raise
+
+
+@router.delete(
+    "/{note_id}/tags/{tag_id}",
+    response_model=NoteResponse,
+    status_code=status.HTTP_200_OK,
+    summary="[Tags] Remove a tag to a specific note",
+)
+async def remove_tag_from_note(
+    note_id: int,
+    tag_id: int,
+    service: NoteService = Depends(get_note_service),
+    current_user: UserResponse = Depends(get_current_user),
+) -> NoteResponse:
+    try:
+        updated_note = await service.remove_tag_from_note(note_id, tag_id, current_user)
+        logger.info(
+            f"Removed tag {tag_id} from note {note_id} for user {current_user.id}"
+        )
+        return updated_note
+    except Exception as e:
+        logger.error(f"Failed to remove tag {tag_id} from note {note_id}: {str(e)}")
         raise

@@ -1,4 +1,5 @@
 from app.repository.note_repo import NoteRepository
+from app.repository.tag_repo import TagRepository
 from app.schemas.schemas import NoteCreate, NoteUpdate, NoteResponse
 
 
@@ -7,6 +8,7 @@ class NoteService:
         """Service layer for note operations."""
 
         self.repository = repository
+        self.tag_repository = TagRepository(repository.session)        
 
     async def create_note(self, data: NoteCreate, current_user) -> NoteResponse:
         """
@@ -36,6 +38,7 @@ class NoteService:
         self,
         search: str | None,
         order_by: str | None,
+        tag_id: int | None,
         limit: int,
         offset: int,
         current_user,
@@ -50,6 +53,7 @@ class NoteService:
         notes = await self.repository.get_all(
             search=search,
             order_by=order_by,
+            tag_id=tag_id,
             limit=limit,
             offset=offset,
             current_user=current_user,
@@ -82,4 +86,12 @@ class NoteService:
         Returns:
             None
         """
-        await self.repository.delete(note_id, current_user)
+        await self.repository.delete(note_id, current_user)        
+    
+    async def add_tag_to_note(self, note_id: int, tag_id: int, current_user) -> NoteResponse:
+        note = await self.repository.add_tag_to_note(note_id, tag_id, current_user)
+        return NoteResponse.model_validate(note)
+    
+    async def remove_tag_from_note(self, note_id: int, tag_id: int, current_user) -> NoteResponse:
+        note = await self.repository.remove_tag_from_note(note_id, tag_id, current_user)
+        return NoteResponse.model_validate(note)

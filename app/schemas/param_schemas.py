@@ -14,6 +14,7 @@ class CommonQueryParams(BaseModel):
 
 
 class NoteQueryParams(CommonQueryParams):
+    tag_id: Annotated[int | None, Field(default=None, description="Filter by tag ID")]
     limit: Annotated[
         int,
         Field(default=20, ge=1, le=100, description="Number of notes per page"),
@@ -21,10 +22,7 @@ class NoteQueryParams(CommonQueryParams):
     offset: Annotated[int, Field(default=0, ge=0, description="Offset for pagination")]
 
 
-class TodoQueryParams(CommonQueryParams):
-    # note_id: Annotated[
-    #     int | None, Field(default=None, description="Filter by Note's ID")
-    # ]
+class TodoQueryParams(CommonQueryParams):    
     status: Annotated[
         Literal["finished", "unfinished"] | None,
         Field(
@@ -46,5 +44,13 @@ class AttachmentQueryParams(BaseModel):
     limit: Annotated[
         int,
         Field(default=20, ge=1, le=100, description="Number of attachments per page"),
+    ]  # 默认每页20条,可被覆盖
+    offset: Annotated[int, Field(default=0, ge=0, description="Offset for pagination")]
+    
+    
+class TagQueryParams(CommonQueryParams):
+    limit: Annotated[
+        int,
+        Field(default=20, ge=1, le=100, description="Number of notes per page"),
     ]  # 默认每页20条,可被覆盖
     offset: Annotated[int, Field(default=0, ge=0, description="Offset for pagination")]

@@ -3,7 +3,7 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.exceptions import AlreadyExistsException, NotFoundException
-from app.models.models import Note
+from app.models.models import Note, Tag, NoteTag
 from app.schemas.schemas import NoteCreate, NoteUpdate
 
 
@@ -59,17 +59,25 @@ class NoteRepository:
         self,
         search: str | None,
         order_by: str | None,
+        tag_id: int | None,
         limit: int,
         offset: int,
         current_user,
     ) -> list[Note]:
-        query = select(Note).where(Note.user_id == current_user.id)
+        query = select(Note).where(Note.user_id == current_user.id)        
+        
+        if tag_id is not None:           
+            tag_query = select(Tag).where(Tag.id == tag_id, Tag.user_id == current_user.id)
+            tag_result = await self.session.scalars(tag_query)
+            tag = tag_result.one_or_none()
+            if not tag:
+                raise NotFoundException(f"Tag with id {tag_id} not found")            
+            query = query.join(NoteTag).join(Tag).where(Tag.id == tag_id)
 
         if search:
-            query = query.where(or_(
-                    Note.content.ilike(f"%{search}%"),
-                    Note.title.ilike(f"%{search}%")
-                ))
+            query = query.where(
+                or_(Note.content.ilike(f"%{search}%"), Note.title.ilike(f"%{search}%"))
+            )
 
         if order_by:
             if order_by == "created_at desc":
@@ -131,5 +139,70 @@ class NoteRepository:
         if not note or note.user_id != current_user.id:
             raise NotFoundException(f"Note with id {note_id} not found")
 
-        await self.session.delete(note)  # 触发 ORM 级联删除
+        await self.session.delete(note)
         await self.session.commit()
+
+    async def add_tag_to_note(self, note_id: int, tag_id: int, current_user) -> Note:
+        """
+        Add a tag to a specific note for the current user.
+        Args:
+            note_id (int): The ID of the note.
+            tag_id (int): The ID of the tag to add.
+            current_user: The current authenticated user.
+        Returns:
+            Note: The updated note object.
+        Raises:
+            NotFoundException: If note or tag not found.
+            AlreadyExistsException: If tag is already associated with the note.
+        """
+
+        note = await self.get_by_id(note_id, current_user)
+
+        query = select(Tag).where(Tag.id == tag_id, Tag.user_id == current_user.id)
+        result = await self.session.scalars(query)
+        tag = result.one_or_none()
+        if not tag:
+            raise NotFoundException(f"Tag with id {tag_id} not found")
+
+        if tag in note.tags:
+            raise AlreadyExistsException(
+                f"Tag with id {tag_id} already associated with note {note_id}"
+            )
+
+        note.tags.append(tag)
+        await self.session.commit()
+        await self.session.refresh(note)
+        return note
+
+    async def remove_tag_from_note(
+        self, note_id: int, tag_id: int, current_user
+    ) -> Note:
+        """
+        Remove a tag from a specific note for the current user.
+        Args:
+            note_id (int): The ID of the note.
+            tag_id (int): The ID of the tag to remove.
+            current_user: The current authenticated user.
+        Returns:
+            Note: The updated note object.
+        Raises:
+            NotFoundException: If note or tag not found, or tag not associated.
+        """
+
+        note = await self.get_by_id(note_id, current_user)
+
+        query = select(Tag).where(Tag.id == tag_id, Tag.user_id == current_user.id)
+        result = await self.session.scalars(query)
+        tag = result.one_or_none()
+        if not tag:
+            raise NotFoundException(f"Tag with id {tag_id} not found")
+
+        if tag not in note.tags:
+            raise NotFoundException(
+                f"Tag with id {tag_id} not associated with note {note_id}"
+            )
+
+        note.tags.remove(tag)
+        await self.session.commit()
+        await self.session.refresh(note)
+        return note

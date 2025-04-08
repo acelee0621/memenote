@@ -139,12 +139,11 @@ class TagUpdate(BaseModel):
     name: str | None = None
     
 
-class TagResponse(BaseSchema):
+class TagResponseForNote(BaseSchema):
     id: int
     name: str
+
+class TagResponse(TagResponseForNote):
     user_id: int
     created_at: datetime
     updated_at: datetime
-    
-class TagResponseForNote(BaseSchema):   
-    name: str
