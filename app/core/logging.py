@@ -6,6 +6,8 @@ from app.core.config import settings
 
 def setup_logging() -> None:
     """Set up logging configuration."""
+    if logging.getLogger().hasHandlers():  # 检查是否已配置
+        return
     format_string = "[%(asctime)s] [%(levelname)s] [%(name)s] %(message)s"
     logging.basicConfig(
         level=logging.DEBUG if settings.DEBUG else logging.INFO,
