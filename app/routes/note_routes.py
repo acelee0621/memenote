@@ -10,8 +10,7 @@ from app.repository.note_repo import NoteRepository
 from app.service.note_service import NoteService
 from app.schemas.schemas import (
     NoteCreate,
-    NoteUpdate,
-    NoteShareCreate,
+    NoteUpdate,    
     NoteResponse,
     UserResponse,
 )
@@ -168,25 +167,42 @@ async def remove_tag_from_note(
     except Exception as e:
         logger.error(f"Failed to remove tag {tag_id} from note {note_id}: {str(e)}")
         raise
-    
-    
-@router.post("/{note_id}/share", response_model=NoteResponse, dependencies=[Depends(get_current_user)])
+
+
+@router.post(
+    "/{note_id}/share",
+    response_model=NoteResponse,
+    dependencies=[Depends(get_current_user)],
+)
 async def enable_share(
     note_id: int,
-    share_data: NoteShareCreate,
+    expires_in: Annotated[
+        int,
+        Query(            
+            description="Expiration time in seconds (default: 7 days)",            
+            ge=60,
+            le=2592000,
+        ),
+    ] = 604800,
     service: NoteService = Depends(get_note_service),
     current_user: UserResponse = Depends(get_current_user),
 ):
     try:
-        updated_note = await service.enable_share(note_id, share_data, current_user)
-        logger.info(f"Enabled sharing for note {note_id} with share_code {updated_note.share_code}")
+        updated_note = await service.enable_share(note_id, expires_in, current_user)
+        logger.info(
+            f"Enabled sharing for note {note_id} with share_code {updated_note.share_code}"
+        )
         return updated_note
     except Exception as e:
         logger.error(f"Failed to enable sharing for note {note_id}: {str(e)}")
         raise
-    
 
-@router.delete("/{note_id}/share", response_model=NoteResponse, dependencies=[Depends(get_current_user)])
+
+@router.delete(
+    "/{note_id}/share",
+    response_model=NoteResponse,
+    dependencies=[Depends(get_current_user)],
+)
 async def disable_share(
     note_id: int,
     service: NoteService = Depends(get_note_service),

@@ -1,8 +1,8 @@
 """Initial migration
 
-Revision ID: d90da408d75f
+Revision ID: c820fbd1d4fb
 Revises: 
-Create Date: 2025-04-08 12:33:24.281673
+Create Date: 2025-04-09 17:23:46.095173
 
 """
 from typing import Sequence, Union
@@ -12,7 +12,7 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision: str = 'd90da408d75f'
+revision: str = 'c820fbd1d4fb'
 down_revision: Union[str, None] = None
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
@@ -37,6 +37,8 @@ def upgrade() -> None:
     sa.Column('user_id', sa.Integer(), nullable=False),
     sa.Column('title', sa.String(length=100), nullable=False),
     sa.Column('content', sa.Text(), nullable=False),
+    sa.Column('share_code', sa.String(length=36), nullable=True),
+    sa.Column('share_expires_at', sa.DateTime(timezone=True), nullable=True),
     sa.Column('created_at', sa.DateTime(timezone=True), nullable=False),
     sa.Column('updated_at', sa.DateTime(timezone=True), nullable=False),
     sa.ForeignKeyConstraint(['user_id'], ['users.id'], ondelete='CASCADE'),
@@ -44,6 +46,7 @@ def upgrade() -> None:
     sa.UniqueConstraint('user_id', 'content', name='_user_content_unique_constraint')
     )
     op.create_index(op.f('ix_notes_created_at'), 'notes', ['created_at'], unique=False)
+    op.create_index(op.f('ix_notes_share_code'), 'notes', ['share_code'], unique=True)
     op.create_table('tags',
     sa.Column('id', sa.Integer(), autoincrement=True, nullable=False),
     sa.Column('name', sa.String(length=50), nullable=False),
@@ -130,6 +133,7 @@ def downgrade() -> None:
     op.drop_index(op.f('ix_tags_name'), table_name='tags')
     op.drop_index(op.f('ix_tags_created_at'), table_name='tags')
     op.drop_table('tags')
+    op.drop_index(op.f('ix_notes_share_code'), table_name='notes')
     op.drop_index(op.f('ix_notes_created_at'), table_name='notes')
     op.drop_table('notes')
     op.drop_index(op.f('ix_users_username'), table_name='users')

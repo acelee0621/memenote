@@ -6,7 +6,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.exceptions import AlreadyExistsException, NotFoundException
 from app.models.models import Note, Tag, NoteTag
-from app.schemas.schemas import NoteCreate, NoteUpdate, NoteShareCreate
+from app.schemas.schemas import NoteCreate, NoteUpdate
 
 
 class NoteRepository:
@@ -209,12 +209,12 @@ class NoteRepository:
         await self.session.refresh(note)
         return note
     
-    async def enable_share(self, note_id: int, share_data: NoteShareCreate, current_user) -> Note:
+    async def enable_share(self, note_id: int, expires_in: int, current_user) -> Note:
         
         note = await self.get_by_id(note_id, current_user)
         # 生成 share_code 和过期时间
         note.generate_share_code()
-        note.share_expires_at = datetime.now(timezone.utc) + timedelta(seconds=share_data.expires_in)
+        note.share_expires_at = datetime.now(timezone.utc) + timedelta(seconds=expires_in)
 
         await self.session.commit()
         await self.session.refresh(note)

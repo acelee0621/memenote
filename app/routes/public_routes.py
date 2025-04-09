@@ -10,12 +10,12 @@ from app.schemas.schemas import NoteResponse
 logger = get_logger(__name__)
 
 
-public_router = APIRouter(prefix="/public", tags=["Public"])
+router = APIRouter(prefix="/public", tags=["Public"])
 
 def get_note_service(session: AsyncSession = Depends(get_db)) -> NoteService:
     return NoteService(NoteRepository(session))
 
-@public_router.get("/notes/{share_code}", response_model=NoteResponse)
+@router.get("/notes/{share_code}", response_model=NoteResponse)
 async def get_shared_note(
     share_code: str,
     service: NoteService = Depends(get_note_service),

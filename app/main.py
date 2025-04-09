@@ -11,6 +11,7 @@ from app.routes import (
     reminder_routes,
     auth_routes,
     tag_routes,
+    public_routes,
     sse,
 )
 
@@ -39,6 +40,7 @@ app.include_router(note_routes.router)  # Notes Router
 app.include_router(todo_routes.router)  # Todos Router
 app.include_router(reminder_routes.router)  # Reminders Router
 app.include_router(tag_routes.router)  # Tags Router
+app.include_router(public_routes.router)  # Public Router
 app.include_router(sse.router)  # SSE Router
 
 

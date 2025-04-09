@@ -1,5 +1,5 @@
 from app.repository.note_repo import NoteRepository
-from app.schemas.schemas import NoteCreate, NoteUpdate, NoteResponse, NoteShareCreate
+from app.schemas.schemas import NoteCreate, NoteUpdate, NoteResponse
 
 
 class NoteService:
@@ -99,12 +99,12 @@ class NoteService:
         return NoteResponse.model_validate(note)
 
     async def enable_share(
-        self, note_id: int, share_data: NoteShareCreate, current_user
+        self, note_id: int, expires_in: int, current_user
     ) -> NoteResponse:
         """
         Enable sharing for a note with a public link.
         """
-        note = await self.repository.enable_share(note_id, share_data, current_user)
+        note = await self.repository.enable_share(note_id, expires_in, current_user)
         return NoteResponse.model_validate(note)
 
     async def disable_share(self, note_id: int, current_user) -> NoteResponse:
