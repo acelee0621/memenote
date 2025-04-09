@@ -11,7 +11,7 @@ router = APIRouter(tags=["SSE"])
 
 REDIS_URL = f"redis://{settings.REDIS_HOST}/0"
 
-# current_user: UserResponse = Depends(get_current_user)
+
 redis_client = redis.from_url(
     REDIS_URL,
     health_check_interval=30,
@@ -19,7 +19,9 @@ redis_client = redis.from_url(
 
 
 @router.get("/notifications/stream")
-async def notification_stream():
+async def notification_stream(
+    # current_user: UserResponse = Depends(get_current_user)
+):
     """
     SSE endpoint to stream reminder notifications for a specific user.
     """
