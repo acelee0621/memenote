@@ -39,7 +39,9 @@ class NoteCreate(BaseModel):
 class NoteUpdate(BaseModel):
     title: str | None = None
     content: str | None = None
-    
+
+class NoteShareCreate(BaseModel):
+    expires_in: int = 604800  # 默认过期时间（秒），例如 7 天   
 
 class NoteResponse(BaseSchema):
     id: int
@@ -48,6 +50,8 @@ class NoteResponse(BaseSchema):
     content: str
     created_at: datetime
     updated_at: datetime
+    share_code: str | None = None
+    share_expires_at: datetime | None = None
     tags: list["TagResponseForNote"] | None = None
     todos: list["TodoResponse"] | None = None
     reminders: list["ReminderResponse"] | None = None

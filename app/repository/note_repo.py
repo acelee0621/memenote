@@ -1,10 +1,12 @@
+from datetime import datetime, timedelta, timezone
+
 from sqlalchemy import select, desc, asc, or_
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.exceptions import AlreadyExistsException, NotFoundException
 from app.models.models import Note, Tag, NoteTag
-from app.schemas.schemas import NoteCreate, NoteUpdate
+from app.schemas.schemas import NoteCreate, NoteUpdate, NoteShareCreate
 
 
 class NoteRepository:
@@ -205,4 +207,41 @@ class NoteRepository:
         note.tags.remove(tag)
         await self.session.commit()
         await self.session.refresh(note)
+        return note
+    
+    async def enable_share(self, note_id: int, share_data: NoteShareCreate, current_user) -> Note:
+        
+        note = await self.get_by_id(note_id, current_user)
+        # 生成 share_code 和过期时间
+        note.generate_share_code()
+        note.share_expires_at = datetime.now(timezone.utc) + timedelta(seconds=share_data.expires_in)
+
+        await self.session.commit()
+        await self.session.refresh(note)
+        return note
+
+    async def disable_share(self, note_id: int, current_user) -> Note:
+        
+        note = await self.get_by_id(note_id, current_user)
+        # 清除分享信息
+        note.share_code = None
+        note.share_expires_at = None
+
+        await self.session.commit()
+        await self.session.refresh(note)
+        return note
+
+    async def get_by_share_code(self, share_code: str) -> Note:
+        
+        query = select(Note).where(Note.share_code == share_code)
+        result = await self.session.scalars(query)
+        note = result.one_or_none()
+
+        if not note:
+            raise NotFoundException("Note not found or sharing not enabled")
+        
+        # 检查是否过期
+        if note.share_expires_at and note.share_expires_at < datetime.now(timezone.utc):
+            raise NotFoundException("Share link has expired")
+
         return note

@@ -1,6 +1,5 @@
 from app.repository.note_repo import NoteRepository
-from app.repository.tag_repo import TagRepository
-from app.schemas.schemas import NoteCreate, NoteUpdate, NoteResponse
+from app.schemas.schemas import NoteCreate, NoteUpdate, NoteResponse, NoteShareCreate
 
 
 class NoteService:
@@ -8,7 +7,6 @@ class NoteService:
         """Service layer for note operations."""
 
         self.repository = repository
-        self.tag_repository = TagRepository(repository.session)        
 
     async def create_note(self, data: NoteCreate, current_user) -> NoteResponse:
         """
@@ -31,7 +29,7 @@ class NoteService:
         Returns:
             NoteResponse: The response model containing the note details.
         """
-        note = await self.repository.get_by_id(note_id, current_user)        
+        note = await self.repository.get_by_id(note_id, current_user)
         return NoteResponse.model_validate(note)
 
     async def get_notes(
@@ -86,12 +84,39 @@ class NoteService:
         Returns:
             None
         """
-        await self.repository.delete(note_id, current_user)        
-    
-    async def add_tag_to_note(self, note_id: int, tag_id: int, current_user) -> NoteResponse:
+        await self.repository.delete(note_id, current_user)
+
+    async def add_tag_to_note(
+        self, note_id: int, tag_id: int, current_user
+    ) -> NoteResponse:
         note = await self.repository.add_tag_to_note(note_id, tag_id, current_user)
         return NoteResponse.model_validate(note)
-    
-    async def remove_tag_from_note(self, note_id: int, tag_id: int, current_user) -> NoteResponse:
+
+    async def remove_tag_from_note(
+        self, note_id: int, tag_id: int, current_user
+    ) -> NoteResponse:
         note = await self.repository.remove_tag_from_note(note_id, tag_id, current_user)
+        return NoteResponse.model_validate(note)
+
+    async def enable_share(
+        self, note_id: int, share_data: NoteShareCreate, current_user
+    ) -> NoteResponse:
+        """
+        Enable sharing for a note with a public link.
+        """
+        note = await self.repository.enable_share(note_id, share_data, current_user)
+        return NoteResponse.model_validate(note)
+
+    async def disable_share(self, note_id: int, current_user) -> NoteResponse:
+        """
+        Disable sharing for a note.
+        """
+        note = await self.repository.disable_share(note_id, current_user)
+        return NoteResponse.model_validate(note)
+
+    async def get_note_by_share_code(self, share_code: str) -> NoteResponse:
+        """
+        Get a note by its share code (public access).
+        """
+        note = await self.repository.get_by_share_code(share_code)
         return NoteResponse.model_validate(note)
