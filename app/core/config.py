@@ -4,6 +4,7 @@ from functools import lru_cache
 
 class Settings(BaseSettings):
     app_name: str = "MemeNote API"
+    BASE_URL: str = "http://localhost:8000"
     JWT_SECRET: str = "your-jwt-secret"
     JWT_ALGORITHM: str = "HS256"
     JWT_EXPIRATION: int = 30

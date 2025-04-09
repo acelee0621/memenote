@@ -1,6 +1,7 @@
-from pydantic import BaseModel, ConfigDict, EmailStr, Field
+from pydantic import BaseModel, ConfigDict, EmailStr, Field, computed_field
 from datetime import datetime
 
+from app.core.config import settings
 
 # 配置基类，启用 ORM 模式
 class BaseSchema(BaseModel):
@@ -43,17 +44,6 @@ class NoteUpdate(BaseModel):
     content: str | None = None
 
 
-class NoteShareCreate(BaseModel):
-    expires_in: int = Field(
-        default=604800,
-        title="分享链接有效期",
-        description="分享链接的有效期（秒），过期后链接自动失效",
-        ge=60,  # 最小值：60秒（1分钟）
-        le=2592000,  # 最大值：30天（30*24*3600秒）
-        example=86400,  # 示例值：1天（86400秒）
-    )
-
-
 class NoteResponse(BaseSchema):
     id: int
     user_id: int
@@ -67,6 +57,11 @@ class NoteResponse(BaseSchema):
     todos: list["TodoResponse"] | None = None
     reminders: list["ReminderResponse"] | None = None
     attachments: list["AttachmentResponse"] | None = None
+    @computed_field
+    def share_url(self) -> str | None:
+        if self.share_code:
+            return f"{settings.BASE_URL}/public/notes/{self.share_code}"
+        return None
 
 
 # 待办事项相关模型
