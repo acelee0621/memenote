@@ -54,10 +54,12 @@ auth_backend = AuthenticationBackend(
 
 fastapi_users = FastAPIUsers[User, int](get_user_manager, [auth_backend])
 
-get_current_user = fastapi_users.current_user()
+get_current_user = fastapi_users.current_user(active=True)
 
+""" 以下为不同的获取当前用户的策略，可根据需要选择 """
+# 获取当前激活用户
 current_active_user = fastapi_users.current_user(active=True)
-
+# 获取当前激活且已验证用户
 current_active_verified_user = fastapi_users.current_user(active=True, verified=True)
-
+# 获取当前激活且为超级用户
 current_superuser = fastapi_users.current_user(active=True, superuser=True)
