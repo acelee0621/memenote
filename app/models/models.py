@@ -2,6 +2,7 @@ import uuid
 from datetime import datetime, timezone
 from typing import Optional
 
+from fastapi_users.db import SQLAlchemyBaseUserTable
 from sqlalchemy import UniqueConstraint
 from sqlalchemy import Boolean, ForeignKey, Integer, String, Text, DateTime
 from sqlalchemy.orm import Mapped, mapped_column, relationship, DeclarativeBase
@@ -23,18 +24,13 @@ class DateTimeMixin:
     )
 
 
-# 用户表
-class User(Base, DateTimeMixin):
-    __tablename__ = "users"
-
+class User(SQLAlchemyBaseUserTable[int], DateTimeMixin, Base):
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
     username: Mapped[str] = mapped_column(
         String(100), index=True, unique=True, nullable=False
     )
-    email: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
     full_name: Mapped[Optional[str]] = mapped_column(String(100), nullable=True)
-    password_hash: Mapped[str] = mapped_column(String(512), nullable=False)
-
+    
     # 关系映射
     notes: Mapped[list["Note"]] = relationship(
         "Note", back_populates="user", cascade="all, delete-orphan"
@@ -51,9 +47,40 @@ class User(Base, DateTimeMixin):
     tags: Mapped[list["Tag"]] = relationship(
         "Tag", back_populates="user", cascade="all, delete-orphan"
     )
-
     def __repr__(self):
         return f"<User(id={self.id}, username={self.username})>"
+
+# # 用户表
+# class User(Base, DateTimeMixin):
+#     __tablename__ = "users"
+
+#     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    # username: Mapped[str] = mapped_column(
+    #         String(100), index=True, unique=True, nullable=False
+    #     )
+#     email: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
+#     full_name: Mapped[Optional[str]] = mapped_column(String(100), nullable=True)
+#     password_hash: Mapped[str] = mapped_column(String(512), nullable=False)
+
+#     # 关系映射
+#     notes: Mapped[list["Note"]] = relationship(
+#         "Note", back_populates="user", cascade="all, delete-orphan"
+#     )
+#     todos: Mapped[list["Todo"]] = relationship(
+#         "Todo", back_populates="user", cascade="all, delete-orphan"
+#     )
+#     reminders: Mapped[list["Reminder"]] = relationship(
+#         "Reminder", back_populates="user", cascade="all, delete-orphan"
+#     )
+#     attachments: Mapped[list["Attachment"]] = relationship(
+#         "Attachment", back_populates="user", cascade="all, delete-orphan"
+#     )
+#     tags: Mapped[list["Tag"]] = relationship(
+#         "Tag", back_populates="user", cascade="all, delete-orphan"
+#     )
+
+#     def __repr__(self):
+#         return f"<User(id={self.id}, username={self.username})>"
 
 
 # 笔记表
@@ -62,7 +89,7 @@ class Note(Base, DateTimeMixin):
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
     user_id: Mapped[int] = mapped_column(
-        ForeignKey("users.id", ondelete="CASCADE"), nullable=False
+        ForeignKey("user.id", ondelete="CASCADE"), nullable=False
     )
     title: Mapped[str] = mapped_column(String(100), nullable=False, default="Untitled")
     content: Mapped[str] = mapped_column(Text, nullable=False)
@@ -109,7 +136,7 @@ class Todo(Base, DateTimeMixin):
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
     user_id: Mapped[int] = mapped_column(
-        ForeignKey("users.id", ondelete="CASCADE"), nullable=False
+        ForeignKey("user.id", ondelete="CASCADE"), nullable=False
     )
     note_id: Mapped[Optional[int]] = mapped_column(
         ForeignKey("notes.id", ondelete="SET NULL"), nullable=True
@@ -131,7 +158,7 @@ class Reminder(Base, DateTimeMixin):
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
     user_id: Mapped[int] = mapped_column(
-        ForeignKey("users.id", ondelete="CASCADE"), nullable=False
+        ForeignKey("user.id", ondelete="CASCADE"), nullable=False
     )
     note_id: Mapped[Optional[int]] = mapped_column(
         ForeignKey("notes.id", ondelete="SET NULL"), nullable=True
@@ -161,7 +188,7 @@ class Attachment(Base, DateTimeMixin):
         index=True,
     )
     user_id: Mapped[int] = mapped_column(
-        ForeignKey("users.id", ondelete="CASCADE"),
+        ForeignKey("user.id", ondelete="CASCADE"),
         nullable=False,
         index=True,
     )
@@ -190,7 +217,7 @@ class Tag(Base, DateTimeMixin):
         String(50), nullable=False, unique=True, index=True
     )
     user_id: Mapped[int] = mapped_column(
-        ForeignKey("users.id", ondelete="CASCADE"),
+        ForeignKey("user.id", ondelete="CASCADE"),
         nullable=False,
         index=True,
     )

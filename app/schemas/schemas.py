@@ -1,5 +1,7 @@
-from pydantic import BaseModel, ConfigDict, EmailStr, Field, computed_field
+from pydantic import BaseModel, ConfigDict, Field, computed_field
 from datetime import datetime
+
+from fastapi_users import schemas
 
 from app.core.config import settings
 
@@ -9,29 +11,25 @@ class BaseSchema(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
 
-# 用户相关模型
-class UserCreate(BaseModel):
+class UserRead(schemas.BaseUser[int]):
     username: str = Field(..., min_length=3, max_length=100)
-    email: EmailStr | None = Field(None, max_length=255)
     full_name: str | None = Field(None, max_length=100)
-    password: str = Field(..., min_length=3)
-
-
-class UserInDB(BaseSchema):
-    id: int
-    username: str
-    email: EmailStr | None = None
-    full_name: str | None = None
-    password_hash: str
-
-
-class UserResponse(BaseSchema):
-    id: int
-    username: str
-    email: str | None = None
-    full_name: str | None = None
     created_at: datetime
     updated_at: datetime
+
+
+class UserResponse(UserRead):
+    pass
+
+
+class UserCreate(schemas.BaseUserCreate):
+    username: str = Field(..., min_length=3, max_length=100)
+    full_name: str | None = Field(None, max_length=100)
+
+
+class UserUpdate(schemas.BaseUserUpdate):
+    username: str = Field(..., min_length=3, max_length=100)
+    full_name: str | None = Field(None, max_length=100)
 
 
 # 笔记相关模型
@@ -108,16 +106,6 @@ class ReminderUpdate(BaseModel):
     reminder_time: datetime | None = None
     message: str | None = None
     is_acknowledged: bool | None = None
-
-
-class Token(BaseModel):
-    access_token: str
-    token_type: str = "bearer"
-
-
-class LoginData(BaseModel):
-    username: str
-    password: str
 
 
 class AttachmentBase(BaseSchema):

@@ -1,5 +1,8 @@
 from typing import AsyncGenerator
+
+from fastapi import Depends
 from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker, AsyncSession
+from fastapi_users.db import SQLAlchemyUserDatabase
 
 from app.core.config import settings
 from app.models.models import Base, User, Note, Todo, Reminder
@@ -36,3 +39,7 @@ async def get_db() -> AsyncGenerator[AsyncSession, None]:
 async def create_db_and_tables():
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
+        
+        
+async def get_user_db(session: AsyncSession = Depends(get_db)):
+    yield SQLAlchemyUserDatabase(session, User)

@@ -226,8 +226,8 @@ class NoteRepository:
     async def disable_share(self, note_id: int, current_user) -> Note:
         note = await self.get_by_id(note_id, current_user)
         # 清除分享信息
-        note.share_code = None
-        note.share_expires_at = None
+        note.share_code = None # type: ignore
+        note.share_expires_at = None # type: ignore
 
         await self.session.commit()
         await self.session.refresh(note)
