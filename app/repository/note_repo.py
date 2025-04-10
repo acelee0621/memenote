@@ -66,14 +66,16 @@ class NoteRepository:
         offset: int,
         current_user,
     ) -> list[Note]:
-        query = select(Note).where(Note.user_id == current_user.id)        
-        
-        if tag_id is not None:           
-            tag_query = select(Tag).where(Tag.id == tag_id, Tag.user_id == current_user.id)
+        query = select(Note).where(Note.user_id == current_user.id)
+
+        if tag_id is not None:
+            tag_query = select(Tag).where(
+                Tag.id == tag_id, Tag.user_id == current_user.id
+            )
             tag_result = await self.session.scalars(tag_query)
             tag = tag_result.one_or_none()
             if not tag:
-                raise NotFoundException(f"Tag with id {tag_id} not found")            
+                raise NotFoundException(f"Tag with id {tag_id} not found")
             query = query.join(NoteTag).join(Tag).where(Tag.id == tag_id)
 
         if search:
@@ -208,20 +210,20 @@ class NoteRepository:
         await self.session.commit()
         await self.session.refresh(note)
         return note
-    
+
     async def enable_share(self, note_id: int, expires_in: int, current_user) -> Note:
-        
         note = await self.get_by_id(note_id, current_user)
         # 生成 share_code 和过期时间
         note.generate_share_code()
-        note.share_expires_at = datetime.now(timezone.utc) + timedelta(seconds=expires_in)
+        note.share_expires_at = datetime.now(timezone.utc) + timedelta(
+            seconds=expires_in
+        )
 
         await self.session.commit()
         await self.session.refresh(note)
         return note
 
     async def disable_share(self, note_id: int, current_user) -> Note:
-        
         note = await self.get_by_id(note_id, current_user)
         # 清除分享信息
         note.share_code = None
@@ -232,14 +234,13 @@ class NoteRepository:
         return note
 
     async def get_by_share_code(self, share_code: str) -> Note:
-        
         query = select(Note).where(Note.share_code == share_code)
         result = await self.session.scalars(query)
         note = result.one_or_none()
 
         if not note:
             raise NotFoundException("Note not found or sharing not enabled")
-        
+
         # 检查是否过期
         if note.share_expires_at and note.share_expires_at < datetime.now(timezone.utc):
             raise NotFoundException("Share link has expired")

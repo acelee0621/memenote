@@ -3,6 +3,7 @@ from datetime import datetime
 
 from app.core.config import settings
 
+
 # 配置基类，启用 ORM 模式
 class BaseSchema(BaseModel):
     model_config = ConfigDict(from_attributes=True)
@@ -57,6 +58,7 @@ class NoteResponse(BaseSchema):
     todos: list["TodoResponse"] | None = None
     reminders: list["ReminderResponse"] | None = None
     attachments: list["AttachmentResponse"] | None = None
+
     @computed_field
     def share_url(self) -> str | None:
         if self.share_code:

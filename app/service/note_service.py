@@ -101,22 +101,13 @@ class NoteService:
     async def enable_share(
         self, note_id: int, expires_in: int, current_user
     ) -> NoteResponse:
-        """
-        Enable sharing for a note with a public link.
-        """
         note = await self.repository.enable_share(note_id, expires_in, current_user)
         return NoteResponse.model_validate(note)
 
     async def disable_share(self, note_id: int, current_user) -> NoteResponse:
-        """
-        Disable sharing for a note.
-        """
         note = await self.repository.disable_share(note_id, current_user)
         return NoteResponse.model_validate(note)
 
     async def get_note_by_share_code(self, share_code: str) -> NoteResponse:
-        """
-        Get a note by its share code (public access).
-        """
         note = await self.repository.get_by_share_code(share_code)
         return NoteResponse.model_validate(note)

@@ -10,7 +10,7 @@ from app.repository.note_repo import NoteRepository
 from app.service.note_service import NoteService
 from app.schemas.schemas import (
     NoteCreate,
-    NoteUpdate,    
+    NoteUpdate,
     NoteResponse,
     UserResponse,
 )
@@ -178,8 +178,8 @@ async def enable_share(
     note_id: int,
     expires_in: Annotated[
         int,
-        Query(            
-            description="Expiration time in seconds (default: 7 days)",            
+        Query(
+            description="Expiration time in seconds (default: 7 days)",
             ge=60,
             le=2592000,
         ),

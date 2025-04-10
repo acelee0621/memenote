@@ -44,7 +44,7 @@ class User(Base, DateTimeMixin):
     )
     reminders: Mapped[list["Reminder"]] = relationship(
         "Reminder", back_populates="user", cascade="all, delete-orphan"
-    )    
+    )
     attachments: Mapped[list["Attachment"]] = relationship(
         "Attachment", back_populates="user", cascade="all, delete-orphan"
     )
@@ -66,8 +66,12 @@ class Note(Base, DateTimeMixin):
     )
     title: Mapped[str] = mapped_column(String(100), nullable=False, default="Untitled")
     content: Mapped[str] = mapped_column(Text, nullable=False)
-    share_code: Mapped[str] = mapped_column(String(36),index=True, nullable=True, unique=True, default=None)
-    share_expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True),nullable=True, default=None)
+    share_code: Mapped[str] = mapped_column(
+        String(36), index=True, nullable=True, unique=True, default=None
+    )
+    share_expires_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=True, default=None
+    )
 
     # 关系映射
     user: Mapped["User"] = relationship("User", back_populates="notes")
@@ -90,7 +94,7 @@ class Note(Base, DateTimeMixin):
     __table_args__ = (
         UniqueConstraint("user_id", "content", name="_user_content_unique_constraint"),
     )
-    
+
     def generate_share_code(self):
         """生成唯一的 share_code"""
         self.share_code = str(uuid.uuid4())
