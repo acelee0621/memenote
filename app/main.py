@@ -11,7 +11,6 @@ from app.core.user_manage import auth_backend, get_current_user, fastapi_users
 from app.models.models import User
 from app.schemas.schemas import UserRead, UserCreate, UserUpdate
 from app.utils.migrations import run_migrations
-
 from app.routes import (
     note_routes,
     todo_routes,
@@ -28,10 +27,12 @@ logger = get_logger(__name__)
 logger.info("Logging configuration completed.")
 
 
+# Run migrations on startup
+run_migrations()
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    if not os.getenv("WORKER_ID") or os.getenv("WORKER_ID") == "0":  # 只在主进程运行
-        run_migrations()  # Run migrations on startup
+    if not os.getenv("WORKER_ID") or os.getenv("WORKER_ID") == "0":  # 只在主进程运行        
         ensure_minio_bucket_exists(bucket_name=settings.MINIO_BUCKET)
     print("启动: 创建 Redis 连接池...")
     app.state.auth_redis = await redis_connect()
