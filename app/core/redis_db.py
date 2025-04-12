@@ -5,7 +5,7 @@ from app.core.config import settings
 
 
 auth_pool = ConnectionPool.from_url(
-    f"redis://{settings.REDIS_HOST}", db=3, max_connections=10, decode_responses=True
+    f"redis://{settings.REDIS_HOST}", db=2, max_connections=10, decode_responses=True
 )
 
 

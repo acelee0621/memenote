@@ -6,16 +6,16 @@ from fastapi_users import BaseUserManager, FastAPIUsers, IntegerIDMixin
 from fastapi_users.authentication import (
     AuthenticationBackend,
     BearerTransport,
-    RedisStrategy    
+    RedisStrategy,
 )
 from fastapi_users.db import SQLAlchemyUserDatabase
 from app.core.config import settings
 from app.core.database import User, get_user_db
 from app.core.redis_db import get_auth_redis
-from app.utils.mail import send_register_email
-
+from app.core.celery_app import celery_app
 
 SECRET = settings.JWT_SECRET
+
 
 class UserManager(IntegerIDMixin, BaseUserManager[User, int]):
     reset_password_token_secret = SECRET
@@ -23,7 +23,11 @@ class UserManager(IntegerIDMixin, BaseUserManager[User, int]):
 
     async def on_after_register(self, user: User, request: Optional[Request] = None):
         print(f"User {user.id} has registered.")
-        send_register_email(user)
+        celery_app.send_task(
+            "app.tasks.mail_task.register_email",
+            args=[user],
+            task_id=f"register_email_sent_{user.id}",
+        )
 
     async def on_after_forgot_password(
         self, user: User, token: str, request: Optional[Request] = None
@@ -33,8 +37,7 @@ class UserManager(IntegerIDMixin, BaseUserManager[User, int]):
     async def on_after_request_verify(
         self, user: User, token: str, request: Optional[Request] = None
     ):
-        print(f"Verification requested for user {user.id}. Verification token: {token}")        
-        
+        print(f"Verification requested for user {user.id}. Verification token: {token}")
 
 
 async def get_user_manager(user_db: SQLAlchemyUserDatabase = Depends(get_user_db)):

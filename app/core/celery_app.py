@@ -12,7 +12,7 @@ celery_app = Celery(
     "memenote",
     broker=CELERY_BROKER_URL,
     backend=CELERY_RESULT_BACKEND,
-    include=["app.tasks.reminder_task"],
+    include=["app.tasks.reminder_task", "app.tasks.mail_task"],
 )
 
 celery_app.conf.update(
