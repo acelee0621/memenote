@@ -13,6 +13,7 @@ from app.core.config import settings
 from app.core.database import User, get_user_db
 from app.core.redis_db import get_auth_redis
 from app.core.celery_app import celery_app
+from app.schemas.schemas import UserRead
 
 SECRET = settings.JWT_SECRET
 
@@ -23,10 +24,12 @@ class UserManager(IntegerIDMixin, BaseUserManager[User, int]):
 
     async def on_after_register(self, user: User, request: Optional[Request] = None):
         print(f"User {user.id} has registered.")
+        user_data = UserRead.model_validate(user)
+        user_data_dict = user_data.model_dump()
         celery_app.send_task(
             "app.tasks.mail_task.register_email",
-            args=[user],
-            task_id=f"register_email_sent_{user.id}",
+            args=[user_data_dict],
+            task_id=f"register_email_sent_{user_data_dict['id']}",
         )
 
     async def on_after_forgot_password(

@@ -1,5 +1,5 @@
 import resend
-from app.models.models import User
+
 from app.core.config import settings
 from app.core.celery_app import celery_app
 
@@ -8,10 +8,10 @@ resend.api_key = settings.RESEND_API_KEY
 
 
 @celery_app.task()
-def register_email(user: User):
+def register_email(user_data: dict):
     params: resend.Emails.SendParams = {
         "from": "onboarding@resend.dev",
-        "to": [user.email],
+        "to": [user_data["email"]],
         "subject": "Welcome to MemeNote",
         "html": f"""
     <!DOCTYPE html>
@@ -65,14 +65,14 @@ def register_email(user: User):
     <body>
         <div class="container">
             <div class="header">
-                <h1>Welcome to MemeNote, {user.full_name}!</h1>
+                <h1>Welcome to MemeNote, {user_data["full_name"]}!</h1>
             </div>
             <div class="content">
                 <p>Thank you for joining MemeNote! We're excited to have you on board.</p>
                 <p>Here are your account details:</p>
                 <ul>
-                    <li><strong>Username:</strong> {user.username}</li>
-                    <li><strong>Email:</strong> {user.email}</li>
+                    <li><strong>Username:</strong> {user_data["username"]}</li>
+                    <li><strong>Email:</strong> {user_data["email"]}</li>
                 </ul>
                 <p>Get started by exploring our platform and creating your first meme note!</p>
                 <a href="https://your-memenote-url.com" class="button">Explore MemeNote</a>
