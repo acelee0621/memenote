@@ -18,6 +18,7 @@ dependencies = [
     "pytest-cov>=6.0.0",
     "pytest-mock>=3.14.0",
     "redis>=5.2.1",
+    "resend>=2.7.0",
     "sqlalchemy>=2.0.38",
     "sse-starlette>=2.2.1",
 ]
