@@ -50,37 +50,6 @@ class User(SQLAlchemyBaseUserTable[int], DateTimeMixin, Base):
     def __repr__(self):
         return f"<User(id={self.id}, username={self.username})>"
 
-# # 用户表
-# class User(Base, DateTimeMixin):
-#     __tablename__ = "users"
-
-#     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
-    # username: Mapped[str] = mapped_column(
-    #         String(100), index=True, unique=True, nullable=False
-    #     )
-#     email: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
-#     full_name: Mapped[Optional[str]] = mapped_column(String(100), nullable=True)
-#     password_hash: Mapped[str] = mapped_column(String(512), nullable=False)
-
-#     # 关系映射
-#     notes: Mapped[list["Note"]] = relationship(
-#         "Note", back_populates="user", cascade="all, delete-orphan"
-#     )
-#     todos: Mapped[list["Todo"]] = relationship(
-#         "Todo", back_populates="user", cascade="all, delete-orphan"
-#     )
-#     reminders: Mapped[list["Reminder"]] = relationship(
-#         "Reminder", back_populates="user", cascade="all, delete-orphan"
-#     )
-#     attachments: Mapped[list["Attachment"]] = relationship(
-#         "Attachment", back_populates="user", cascade="all, delete-orphan"
-#     )
-#     tags: Mapped[list["Tag"]] = relationship(
-#         "Tag", back_populates="user", cascade="all, delete-orphan"
-#     )
-
-#     def __repr__(self):
-#         return f"<User(id={self.id}, username={self.username})>"
 
 
 # 笔记表
