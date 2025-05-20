@@ -36,7 +36,7 @@ def ensure_minio_bucket_exists(bucket_name: str):
                 except Exception as create_error:
                     logger.error(f"Failed to create bucket '{bucket_name}': {str(create_error)}")
                     raise
-            case "AccessDenied":
+            case "403":
                 logger.error(f"Permission denied to access bucket '{bucket_name}'")
                 raise ForbiddenException("Permission denied to upload file")
             case _:

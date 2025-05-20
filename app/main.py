@@ -1,4 +1,4 @@
-import os
+from asyncio import to_thread
 from fastapi import FastAPI, Response, Depends
 from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
@@ -32,8 +32,7 @@ run_migrations()
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    if not os.getenv("WORKER_ID") or os.getenv("WORKER_ID") == "0":  # 只在主进程运行        
-        ensure_minio_bucket_exists(bucket_name=settings.MINIO_BUCKET)
+    await to_thread(ensure_minio_bucket_exists, bucket_name=settings.MINIO_BUCKET)
     print("启动: 创建 Redis 连接池...")
     app.state.auth_redis = await redis_connect()
     yield
