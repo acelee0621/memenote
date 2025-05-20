@@ -28,7 +28,7 @@ def ensure_minio_bucket_exists(bucket_name: str):
     except ClientError as e:
         error_code = e.response.get("Error", {}).get("Code", "UnknownError")
         match error_code:
-            case "NoSuchBucket":
+            case "404":
                 logger.error(f"Bucket '{bucket_name}' does not exist.")
                 try:
                     s3_client.create_bucket(Bucket=bucket_name)
