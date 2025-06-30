@@ -1,0 +1,50 @@
+import aioboto3
+from botocore.client import Config
+from botocore.exceptions import ClientError
+from typing import AsyncGenerator
+
+from app.core.config import settings
+from app.core.logging import get_logger
+from app.core.exceptions import ForbiddenException
+
+logger = get_logger(__name__)
+
+async def get_s3_client() -> AsyncGenerator[aioboto3.client, None]:
+    """
+    Provides an asynchronous S3 client (aioboto3) as a FastAPI dependency.
+    The client is properly closed after use due to the async with context manager.
+    """
+    async with aioboto3.client(
+        's3',
+        endpoint_url=f"{'https' if settings.MINIO_USE_SSL else 'http'}://{settings.MINIO_ENDPOINT}",
+        aws_access_key_id=settings.MINIO_ACCESS_KEY,
+        aws_secret_access_key=settings.MINIO_SECRET_KEY,
+        config=Config(signature_version='s3v4'), # MinIO 通常需要 v4 签名
+        # region_name 可以随便设置一个，例如 'us-east-1'，对于 MinIO 不重要
+        region_name='us-east-1'
+    ) as s3_client:
+        yield s3_client
+
+
+async def ensure_minio_bucket_exists(bucket_name: str, s3_client: aioboto3.client):
+    try:
+        # 检查 bucket 是否存在
+        await s3_client.head_bucket(Bucket=bucket_name)
+        logger.info(f"Bucket '{bucket_name}' already exists.")
+    except ClientError as e:
+        error_code = e.response.get("Error", {}).get("Code", "UnknownError")
+        match error_code:
+            case "404":
+                logger.error(f"Bucket '{bucket_name}' does not exist. Attempting to create.")
+                try:
+                    await s3_client.create_bucket(Bucket=bucket_name)
+                    logger.info(f"Bucket '{bucket_name}' created successfully.")
+                except Exception as create_error:
+                    logger.error(f"Failed to create bucket '{bucket_name}': {str(create_error)}")
+                    raise
+            case "403":
+                logger.error(f"Permission denied to access bucket '{bucket_name}'")
+                raise ForbiddenException("Permission denied to upload file")
+            case _:
+                logger.error(f"Unexpected error checking bucket '{bucket_name}': {str(e)}")
+                raise
